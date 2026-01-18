@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: parking_db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432" # Přidáno: Umožní vám připojit se z PC (DBeaver/Adminer)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - parkoviste-net
+
+  app:
+    build: .
+    image: hlidac-app:latest # Přidáno: Explicitní název obrazu (řeší chybu 500)
+    container_name: parking_worker
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - .:/app # Přidáno: Propojení kódu (změny v .py se projeví hned)
+      - ./webcam_archive:/app/webcam_archive
+      - ./runs:/app/runs
+    networks:
+      - parkoviste-net
+
+  api:
+    image: hlidac-app:latest # Přidáno: Použije stejný obraz jako 'app'
+    container_name: parking_api
+    command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - .:/app # Přidáno: Propojení kódu pro živý vývoj API
+    networks:
+      - parkoviste-net
+
+networks:
+  parkoviste-net:
+
+
+volumes:
+  postgres_data:
