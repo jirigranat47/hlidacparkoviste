@@ -2,6 +2,7 @@ import os
 import time
 import requests
 import psycopg2
+from psycopg2.extras import RealDictCursor
 import cv2
 import numpy as np
 from bs4 import BeautifulSoup
@@ -25,6 +26,10 @@ RETENTION_DAYS = 7  # Jak dlouho uchovávat fotky
 # ID tříd v YOLO (COCO dataset): 2=car, 3=motorcycle, 5=bus, 7=truck
 VEHICLE_CLASSES = [2, 7]
 
+# Nastavení citlivosti detektoru (možné přepsat přes ENV)
+YOLO_CONF = float(os.getenv("YOLO_CONF", 0.25))
+YOLO_IOU = float(os.getenv("YOLO_IOU", 0.7))
+
 # Inicializace modelu
 model = YOLO('yolov8n.pt')
 
@@ -33,18 +38,25 @@ for folder in [SLOZKA_ORIGINAL, SLOZKA_ANNOTATED]:
     if not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+DB_HOST = os.getenv("DB_HOST", "db")
+DB_NAME = os.getenv("DB_NAME", "parkoviste_db")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "tajne_heslo")
+
 # --- DATABÁZOVÉ FUNKCE ---
 def get_db_connection():
     try:
-        conn = psycopg2.connect(
-            host=os.getenv("DB_HOST", "db"),
-            database=os.getenv("DB_NAME", "parkoviste_db"),
-            user=os.getenv("DB_USER", "postgres"),
-            password=os.getenv("DB_PASSWORD", "tajne_heslo")
-        )
-        return conn
+        if DATABASE_URL:
+            return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        else:
+            return psycopg2.connect(
+                host=DB_HOST, database=DB_NAME, 
+                user=DB_USER, password=DB_PASSWORD,
+                cursor_factory=RealDictCursor
+            )
     except Exception as e:
-        print(f"Chyba připojení k DB: {e}")
+        print(f"API DB Error: {e}")
         return None
 
 def init_db():
@@ -131,7 +143,7 @@ def stahni_a_detekuj():
         # 3. DETEKCE AUT
         # save=False, aby se nevytvářely runs/detect složky
         # classes omezí detekci jen na vozidla
-        results = model.predict(source=original_path, classes=VEHICLE_CLASSES, conf=0.25, save=False, verbose=False)
+        results = model.predict(source=original_path, classes=VEHICLE_CLASSES, conf=YOLO_CONF, iou=YOLO_IOU, save=False, verbose=False)
         
         # Spočítáme počet detekovaných objektů a získáme plot
         count = 0
