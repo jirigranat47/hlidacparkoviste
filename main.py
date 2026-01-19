@@ -20,8 +20,8 @@ ALT_TEXT = "Webkamera na náměstí"
 SLOZKA_BASE = "webcam_archive"
 SLOZKA_ORIGINAL = os.path.join(SLOZKA_BASE, "original")
 SLOZKA_ANNOTATED = os.path.join(SLOZKA_BASE, "annotated")
-INTERVAL_SEKUNDY = 600  # 10 minut
-RETENTION_DAYS = 7  # Jak dlouho uchovávat fotky
+INTERVAL_SEKUNDY = int(os.getenv("INTERVAL_SEKUNDY", 300))  # 5 minut
+RETENTION_DAYS = int(os.getenv("RETENTION_DAYS", 7))  # Jak dlouho uchovávat fotky
 
 # ID tříd v YOLO (COCO dataset): 2=car, 3=motorcycle, 5=bus, 7=truck
 VEHICLE_CLASSES = [2, 7]
