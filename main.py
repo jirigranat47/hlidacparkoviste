@@ -2,8 +2,10 @@ import os
 import time
 import requests
 import psycopg2
+import cv2
+import numpy as np
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urljoin
 from ultralytics import YOLO
 from dotenv import load_dotenv
@@ -14,18 +16,22 @@ load_dotenv()
 # --- KONFIGURACE ---
 URL_STRANKY = "https://www.kostelecno.cz/webkamera"
 ALT_TEXT = "Webkamera na náměstí"
-SLOZKA_PRO_FOTKY = "webcam_archive"
+SLOZKA_BASE = "webcam_archive"
+SLOZKA_ORIGINAL = os.path.join(SLOZKA_BASE, "original")
+SLOZKA_ANNOTATED = os.path.join(SLOZKA_BASE, "annotated")
 INTERVAL_SEKUNDY = 600  # 10 minut
-POCET_VOLNYCH_MIST = 103
+RETENTION_DAYS = 7  # Jak dlouho uchovávat fotky
 
 # ID tříd v YOLO (COCO dataset): 2=car, 3=motorcycle, 5=bus, 7=truck
 VEHICLE_CLASSES = [2, 7]
 
-# Inicializace modelu (verze 'n' - nano je nejrychlejší a pro tento účel stačí)
+# Inicializace modelu
 model = YOLO('yolov8n.pt')
 
-if not os.path.exists(SLOZKA_PRO_FOTKY):
-    os.makedirs(SLOZKA_PRO_FOTKY)
+# Vytvoření složek
+for folder in [SLOZKA_ORIGINAL, SLOZKA_ANNOTATED]:
+    if not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
 
 # --- DATABÁZOVÉ FUNKCE ---
 def get_db_connection():
@@ -65,7 +71,6 @@ def save_to_db(timestamp_str, count):
     conn = get_db_connection()
     if conn:
         try:
-            # timestamp_str je ve formátu "%Y%m%d_%H%M%S", převedeme na datetime
             dt = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
             cur = conn.cursor()
             cur.execute("INSERT INTO parkoviste_zaznamy (timestamp, count) VALUES (%s, %s)", (dt, count))
@@ -75,6 +80,31 @@ def save_to_db(timestamp_str, count):
             print(f"Uloženo do DB: {dt} - {count} aut")
         except Exception as e:
             print(f"Chyba při ukládání do DB: {e}")
+
+# --- POMOCNÉ FUNKCE ---
+def cleanup_old_images():
+    """Smaže obrázky starší než RETENTION_DAYS ze složek archive."""
+    limit_date = datetime.now() - timedelta(days=RETENTION_DAYS)
+    deleted_count = 0
+    
+    for folder in [SLOZKA_ORIGINAL, SLOZKA_ANNOTATED]:
+        if not os.path.exists(folder):
+            continue
+            
+        for filename in os.listdir(folder):
+            filepath = os.path.join(folder, filename)
+            try:
+                # Smazat pokud je to soubor a je starší než limit
+                if os.path.isfile(filepath):
+                    file_time = datetime.fromtimestamp(os.path.getmtime(filepath))
+                    if file_time < limit_date:
+                        os.remove(filepath)
+                        deleted_count += 1
+            except Exception as e:
+                print(f"Chyba při mazání souboru {filepath}: {e}")
+    
+    if deleted_count > 0:
+        print(f"[{datetime.now()}] CLEANUP: Smazáno {deleted_count} starých obrázků.")
 
 def stahni_a_detekuj():
     try:
@@ -90,25 +120,47 @@ def stahni_a_detekuj():
         img_url = urljoin(URL_STRANKY, img_tag['src'])
         img_data = requests.get(img_url).content
         
-        # 2. Uložení fotky
+        # 2. Uložení originální fotky
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filepath = os.path.join(SLOZKA_PRO_FOTKY, f"parking_{timestamp}.jpg")
-        with open(filepath, 'wb') as f:
-            f.write(img_data)
-
-        # 3. DETEKCE AUT
-        # stream=True šetří paměť, classes omezí detekci jen na vozidla
-        results = model.predict(source=filepath, classes=VEHICLE_CLASSES, conf=0.25, save=True)
+        filename = f"parking_{timestamp}.jpg"
+        original_path = os.path.join(SLOZKA_ORIGINAL, filename)
         
-        # Spočítáme počet detekovaných objektů
+        with open(original_path, 'wb') as f:
+            f.write(img_data)
+        
+        # 3. DETEKCE AUT
+        # save=False, aby se nevytvářely runs/detect složky
+        # classes omezí detekci jen na vozidla
+        results = model.predict(source=original_path, classes=VEHICLE_CLASSES, conf=0.25, save=False, verbose=False)
+        
+        # Spočítáme počet detekovaných objektů a získáme plot
         count = 0
+        result_plot = None
+        
         for r in results:
             count += len(r.boxes)
+            # Vykreslení bounding boxů do obrázku
+            # plot() vrací numpy array (BGR)
+            result_plot = r.plot()
 
         print(f"[{datetime.now()}] Detekováno vozidel: {count}")
         
+        # Uložení anotovaného obrázku
+        if result_plot is not None:
+            annotated_path = os.path.join(SLOZKA_ANNOTATED, filename)
+            cv2.imwrite(annotated_path, result_plot)
+        else:
+             # Pokud se nic nenašlo nebo nastala chyba plotování, můžeme uložit original i do annotated, nebo nic.
+             # Zde uložíme alespoň original, aby bylo vidět co se dělo, i když bez boxů (když boxes=0, plot vrací čistý obr).
+             # Ale result_plot by měl být validní i když boxes=0.
+             pass
+
+        
         # 4. ZÁPIS DO DATABÁZE
         save_to_db(timestamp, count)
+
+        # 5. Úklid starých fotek
+        cleanup_old_images()
 
     except Exception as e:
         print(f"Chyba: {e}")
@@ -117,6 +169,11 @@ if __name__ == "__main__":
     print("Čekám 10s na start databáze...")
     time.sleep(10)
     init_db()
+    
+    # Prvotní úklid při startu
+    print("Spouštím úklid starých souborů...")
+    cleanup_old_images()
+    
     print("Spouštím monitoring parkoviště...")
     while True:
         stahni_a_detekuj()
