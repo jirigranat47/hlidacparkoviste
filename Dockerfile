@@ -15,6 +15,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Poté zkopírujeme zbytek aplikace
+# Poté zkopírujeme zbytek aplikace
 COPY . .
 
-CMD ["python", "main.py"]
+# Nastavení pro Railway a YOLO
+ENV YOLO_CONFIG_DIR=/tmp/Ultralytics
+ENV PORT=8000
+
+# Výchozí příkaz necháme prázdný nebo nastavíme na spuštění API,
+# ale Railway by mělo použít Procfile. Pro jistotu zde dáme spuštění API.
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]

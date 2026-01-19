@@ -5,20 +5,32 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 
+from threading import Thread
+import main as worker_module  # Importujeme modul workeru
+
 app = FastAPI()
 
-# Konfigurace připojení (stejná jako u workeru)
+# Konfigurace připojení
+# Railway poskytuje 'DATABASE_URL', lokálně používáme jednotlivé proměnné nebo také DATABASE_URL
+DATABASE_URL = os.getenv("DATABASE_URL")
 DB_HOST = os.getenv("DB_HOST", "db")
 DB_NAME = os.getenv("DB_NAME", "parkoviste_db")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "tajne_heslo")
 
 def get_db_connection():
-    return psycopg2.connect(
-        host=DB_HOST, database=DB_NAME, 
-        user=DB_USER, password=DB_PASSWORD,
-        cursor_factory=RealDictCursor # Vrací data jako slovníky (JSON ready)
-    )
+    try:
+        if DATABASE_URL:
+            return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        else:
+            return psycopg2.connect(
+                host=DB_HOST, database=DB_NAME, 
+                user=DB_USER, password=DB_PASSWORD,
+                cursor_factory=RealDictCursor
+            )
+    except Exception as e:
+        print(f"API DB Error: {e}")
+        return None
 
 
 
@@ -45,6 +57,14 @@ def get_current():
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.on_event("startup")
+def startup_event():
+    # Spustíme worker ve vedlejším vlákně
+    # Daemon=True zajistí, že se vlákno ukončí, když skončí hlavní proces
+    worker_thread = Thread(target=worker_module.start_worker_loop, daemon=True)
+    worker_thread.start()
+    print("System: Worker vlákno spuštěno.")
 
 @app.get("/")
 def read_root():

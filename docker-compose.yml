@@ -18,26 +18,14 @@ services:
     networks:
       - parkoviste-net
 
-  app:
-    build: .
-    image: hlidac-app:latest # Přidáno: Explicitní název obrazu (řeší chybu 500)
-    container_name: parking_worker
-    restart: always
-    depends_on:
-      - db
-    env_file:
-      - .env
-    volumes:
-      - .:/app # Přidáno: Propojení kódu (změny v .py se projeví hned)
-      - ./webcam_archive:/app/webcam_archive
-      - ./runs:/app/runs
-    networks:
-      - parkoviste-net
+  # app service removed - merged into api
 
   api:
-    image: hlidac-app:latest # Přidáno: Použije stejný obraz jako 'app'
+    image: hlidac-app:latest
     container_name: parking_api
+    build: . # Build context moved here
     command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+    restart: always
     ports:
       - "8000:8000"
     depends_on:
@@ -45,7 +33,9 @@ services:
     env_file:
       - .env
     volumes:
-      - .:/app # Přidáno: Propojení kódu pro živý vývoj API
+      - .:/app # Propojení kódu
+      - ./webcam_archive:/app/webcam_archive # Ukládání fotek
+      - ./runs:/app/runs # (Legacy/Backup)
     networks:
       - parkoviste-net
 

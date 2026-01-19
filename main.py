@@ -179,3 +179,22 @@ if __name__ == "__main__":
         stahni_a_detekuj()
         print(f"Čekám {INTERVAL_SEKUNDY/60} minut do další kontroly...")
         time.sleep(INTERVAL_SEKUNDY)
+
+def start_worker_loop():
+    """Funkce pro spuštění workeru v samostatném vlákně"""
+    print("Worker: Čekám 5s na start databáze (zpožděný start)...")
+    time.sleep(5) # Krátké čekání, api.py už bude běžet
+    init_db()
+    
+    print("Worker: Spouštím úklid starých souborů...")
+    cleanup_old_images()
+    
+    print("Worker: Spouštím monitoring parkoviště...")
+    while True:
+        try:
+            stahni_a_detekuj()
+        except Exception as e:
+            print(f"Worker Error: {e}")
+        
+        print(f"Worker: Čekám {INTERVAL_SEKUNDY/60} minut do další kontroly...")
+        time.sleep(INTERVAL_SEKUNDY)
