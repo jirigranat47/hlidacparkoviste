@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hlídač Parkoviště - Kostelec n. O.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="background-glob"></div>
+
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>Hlídač <span class="gradient-text">Parkoviště</span></h1>
+                <p class="subtitle">Kostelec nad Orlicí - Náměstí</p>
+            </div>
+            <div class="live-indicator">
+                <span class="dot"></span>
+                LIVE
+            </div>
+        </header>
+
+        <main>
+            <div class="grid">
+                <div class="card occupancy-card">
+                    <h2>Aktuální obsazenost</h2>
+                    <div class="occupancy-display">
+                        <span id="current-count" class="loading">--</span>
+                        <span class="label">vozidel</span>
+                    </div>
+                    <div id="status-badge" class="status-badge">Načítání...</div>
+                    <p class="last-updated">Aktualizováno: <span id="last-updated-time">--:--</span></p>
+                </div>
+
+                <div class="card info-card">
+                    <h2>Informace</h2>
+                    <ul class="info-list">
+                        <li>
+                            <span class="icon">📍</span>
+                            <div>
+                                <strong>Lokalita</strong>
+                                <span>Palackého náměstí</span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="icon">🕒</span>
+                            <div>
+                                <strong>Interval měření</strong>
+                                <span>Každých 10 minut</span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="icon">🤖</span>
+                            <div>
+                                <strong>Technologie</strong>
+                                <span>AI detekce (YOLOv8)</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card chart-card">
+                <h2>Historie obsazenosti (posledních 24h)</h2>
+                <div class="chart-container">
+                    <canvas id="occupancyChart"></canvas>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Hlídač Parkoviště | Vyvíjeno s ❤️ a AI</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

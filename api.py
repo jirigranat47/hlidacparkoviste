@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
@@ -18,9 +20,7 @@ def get_db_connection():
         cursor_factory=RealDictCursor # Vrací data jako slovníky (JSON ready)
     )
 
-@app.get("/")
-def read_root():
-    return {"message": "Hlídač parkoviště API běží!"}
+
 
 @app.get("/stats")
 def get_stats():
@@ -42,3 +42,10 @@ def get_current():
     cur.close()
     conn.close()
     return data or {"count": 0}
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+def read_root():
+    return FileResponse('static/index.html')

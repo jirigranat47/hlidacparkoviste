@@ -16,6 +16,7 @@ URL_STRANKY = "https://www.kostelecno.cz/webkamera"
 ALT_TEXT = "Webkamera na náměstí"
 SLOZKA_PRO_FOTKY = "webcam_archive"
 INTERVAL_SEKUNDY = 600  # 10 minut
+POCET_VOLNYCH_MIST = 103
 
 # ID tříd v YOLO (COCO dataset): 2=car, 3=motorcycle, 5=bus, 7=truck
 VEHICLE_CLASSES = [2, 7]

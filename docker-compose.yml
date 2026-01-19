@@ -49,6 +49,15 @@ services:
     networks:
       - parkoviste-net
 
+  adminer:
+    image: adminer
+    container_name: parking_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - parkoviste-net
+
 networks:
   parkoviste-net:
 
