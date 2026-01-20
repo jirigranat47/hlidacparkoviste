@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urljoin
 from ultralytics import YOLO
 from dotenv import load_dotenv
+import parking_mask # Import definice masky
 
 # Načtení environment proměnných z .env souboru (pokud existuje)
 load_dotenv()
@@ -139,21 +140,55 @@ def stahni_a_detekuj():
         
         with open(original_path, 'wb') as f:
             f.write(img_data)
+            
+        # 2b. Načteme obrázek pro vizualizaci a kontrolu
+        frame = cv2.imread(original_path)
         
         # 3. DETEKCE AUT
-        # save=False, aby se nevytvářely runs/detect složky
-        # classes omezí detekci jen na vozidla
+        # Detekujeme na celém obrázku pro zachování kontextu (model lépe pozná auta)
         results = model.predict(source=original_path, classes=VEHICLE_CLASSES, conf=YOLO_CONF, iou=YOLO_IOU, save=False, verbose=False)
         
-        # Spočítáme počet detekovaných objektů a získáme plot
+        # Spočítáme počet detekovaných objektů UVNITŘ zóny
         count = 0
-        result_plot = None
         
+        # Připravíme kopii obrázku pro vykreslení
+        annotated_frame = frame.copy()
+        
+        # Vykreslení hranice parkovacích zón (zeleně - definice oblasti)
+        cv2.polylines(annotated_frame, parking_mask.PARKING_ZONES, isClosed=True, color=(0, 255, 0), thickness=2)
+
         for r in results:
-            count += len(r.boxes)
-            # Vykreslení bounding boxů do obrázku
-            # plot() vrací numpy array (BGR)
-            result_plot = r.plot()
+            boxes = r.boxes
+            for box in boxes:
+                # Získání souřadnic boxu
+                x1, y1, x2, y2 = box.xyxy[0]
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                
+                # Výpočet středu boxu
+                cx = int((x1 + x2) / 2)
+                cy = int((y1 + y2) / 2)
+                
+                # Kontrola, zda je střed uvnitř NĚKTERÉ z parkovacích zón
+                is_in_zone = False
+                for zone in parking_mask.PARKING_ZONES:
+                    # measureDist=False vrací +1 (uvnitř), -1 (venku), 0 (na hraně)
+                    if cv2.pointPolygonTest(zone, (cx, cy), False) >= 0:
+                        is_in_zone = True
+                        break
+                
+                if is_in_zone:
+                    count += 1
+                    # Vykreslíme box (zeleně pro započítaná auta)
+                    cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    # Můžeme přidat i label
+                    # conf = float(box.conf)
+                    # cv2.putText(annotated_frame, f"{conf:.2f}", (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                else:
+                    # Auta mimo zónu můžeme ignorovat nebo vykreslit červeně pro debug
+                    # Pro finální nasazení asi spíše nevykreslovat, nebo vykreslit tence šedě
+                    cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 1)
+
+        result_plot = annotated_frame
 
         print(f"[{datetime.now()}] Detekováno vozidel: {count}")
         
