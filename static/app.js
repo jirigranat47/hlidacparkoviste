@@ -53,18 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchStatsData() {
         try {
             const response = await fetch('/stats');
-            let data = await response.json();
-
-            // Post-process data
-            // API returns list of {timestamp, count}, Descending.
-            // We need Ascending for the chart.
-            data = data.reverse();
+            const data = await response.json(); // Data is already sorted ASC
 
             const labels = data.map(d => {
-                const date = new Date(d.timestamp);
-                return date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+                const date = new Date(d.hour_bucket);
+                return date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }); // Show hour, e.g., "14:00"
             });
-            const counts = data.map(d => d.count);
+            const counts = data.map(d => d.avg_count);
 
             renderChart(labels, counts);
 
@@ -87,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Počet vozidel',
+                    label: 'Průměr vozidel',
                     data: dataPoints,
                     borderColor: '#38bdf8',
                     backgroundColor: gradient,

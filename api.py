@@ -37,13 +37,37 @@ def get_db_connection():
 @app.get("/stats")
 def get_stats():
     conn = get_db_connection()
-    cur = conn.cursor()
-    # Vybere posledních 100 záznamů
-    cur.execute("SELECT timestamp, count FROM parkoviste_zaznamy ORDER BY timestamp DESC LIMIT 100")
-    data = cur.fetchall()
-    cur.close()
-    conn.close()
-    return data
+    if not conn:
+        return [] # V případě chyby připojení vrátí prázdný seznam
+
+    try:
+        cur = conn.cursor()
+        # Dotaz pro získání průměrné obsazenosti za každou hodinu
+        # v posledních 24 hodinách. Data jsou seřazena chronologicky.
+        query = """
+            SELECT
+                date_trunc('hour', timestamp) AS hour_bucket,
+                ROUND(AVG(count))::integer AS avg_count
+            FROM
+                parkoviste_zaznamy
+            WHERE
+                timestamp >= NOW() - INTERVAL '24 hours'
+            GROUP BY
+                hour_bucket
+            ORDER BY
+                hour_bucket;
+        """
+        cur.execute(query)
+        data = cur.fetchall()
+        return data
+    except Exception as e:
+        print(f"API Error in get_stats: {e}")
+        return [] # V případě chyby v dotazu také vrátí prázdný seznam
+    finally:
+        # Zajistíme, že se spojení vždy uzavře
+        if conn:
+            cur.close()
+            conn.close()
 
 @app.get("/current")
 def get_current():
