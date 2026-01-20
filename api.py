@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
+from datetime import timezone
 
 from threading import Thread
 import main as worker_module  # Importujeme modul workeru
@@ -65,7 +66,16 @@ def get_stats():
         """
         cur.execute(query)
         data = cur.fetchall()
-        return data
+        
+        # Konverze na dict a přidání UTC časové zóny
+        result = []
+        for row in data:
+            row_dict = dict(row)
+            if row_dict.get('hour_bucket'):
+                row_dict['hour_bucket'] = row_dict['hour_bucket'].replace(tzinfo=timezone.utc)
+            result.append(row_dict)
+            
+        return result
     except Exception as e:
         print(f"API Error in get_stats: {e}")
         return [] # V případě chyby v dotazu také vrátí prázdný seznam
