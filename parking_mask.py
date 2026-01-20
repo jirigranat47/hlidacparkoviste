@@ -9,23 +9,23 @@ PARKING_ZONES = [
     np.array([
         [434, 499],     # Levý horní
         [564, 556],     # Pravý horní
-        [123, 920],     # Pravý dolní
+        [72, 948],     # Pravý dolní
         [40, 771]       # Levý dolní
     ], dtype=np.int32),
     
-    #Druhý polygon (odkomentujte a doplňte souřadnice)
+    #Druhý polygon (spodní jižní část)
     np.array([
-        [756, 550],
+        [756, 533],
         [910, 559],
-        [1006, 1020],
-        [772, 1020]
+        [1021, 1020],
+        [751, 1020]
+    ], dtype=np.int32),
+
+    #Třetí polygon (parkování podél severní části)
+    np.array([
+        [552, 360],
+        [631, 359],
+        [1, 734],
+        [3, 620]
     ], dtype=np.int32),
 ]
-
-# Příklad složitějšího polygonu (zakomentovaný):
-# PARKING_ZONE = np.array([
-#     [100, 200],
-#     [500, 200],
-#     [600, 800],
-#     [50, 800]
-# ], dtype=np.int32)

@@ -159,7 +159,7 @@ def stahni_a_detekuj():
 
         for r in results:
             boxes = r.boxes
-            for box in boxes:
+            for box in boxes:                
                 # Získání souřadnic boxu
                 x1, y1, x2, y2 = box.xyxy[0]
                 x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
@@ -167,6 +167,8 @@ def stahni_a_detekuj():
                 # Výpočet středu boxu
                 cx = int((x1 + x2) / 2)
                 cy = int((y1 + y2) / 2)
+
+                #print("Nalezeno vozidlo: ", cx, cy)
                 
                 # Kontrola, zda je střed uvnitř NĚKTERÉ z parkovacích zón
                 is_in_zone = False
@@ -174,6 +176,7 @@ def stahni_a_detekuj():
                     # measureDist=False vrací +1 (uvnitř), -1 (venku), 0 (na hraně)
                     if cv2.pointPolygonTest(zone, (cx, cy), False) >= 0:
                         is_in_zone = True
+                        #print("Uvnitř zóny")
                         break
                 
                 if is_in_zone:
@@ -213,8 +216,8 @@ def stahni_a_detekuj():
         print(f"Chyba: {e}")
 
 if __name__ == "__main__":
-    print("Čekám 10s na start databáze...")
-    time.sleep(10)
+    print("Čekám 5s na start databáze...")
+    time.sleep(5)
     init_db()
     
     # Prvotní úklid při startu
@@ -222,10 +225,7 @@ if __name__ == "__main__":
     cleanup_old_images()
     
     print("Spouštím monitoring parkoviště...")
-    while True:
-        stahni_a_detekuj()
-        print(f"Čekám {INTERVAL_SEKUNDY/60} minut do další kontroly...")
-        time.sleep(INTERVAL_SEKUNDY)
+    stahni_a_detekuj()    
 
 def start_worker_loop():
     """Funkce pro spuštění workeru v samostatném vlákně"""
