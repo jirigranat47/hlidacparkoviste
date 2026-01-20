@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
@@ -9,6 +10,11 @@ from threading import Thread
 import main as worker_module  # Importujeme modul workeru
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
+# Verze aplikace pro cache-busting (načítá z ENV nebo použije timestamp)
+import time
+APP_VERSION = os.getenv("APP_VERSION", str(int(time.time())))
 
 # Konfigurace připojení
 # Railway poskytuje 'DATABASE_URL', lokálně používáme jednotlivé proměnné nebo také DATABASE_URL
@@ -90,6 +96,6 @@ def startup_event():
     worker_thread.start()
     print("System: Worker vlákno spuštěno.")
 
-@app.get("/")
-def read_root():
-    return FileResponse('static/index.html')
+@app.get("/", response_class=HTMLResponse)
+def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "version": APP_VERSION})
