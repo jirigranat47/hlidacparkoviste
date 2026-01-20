@@ -31,7 +31,7 @@ YOLO_CONF = float(os.getenv("YOLO_CONF", 0.25))
 YOLO_IOU = float(os.getenv("YOLO_IOU", 0.7))
 
 # Inicializace modelu
-model = YOLO('yolov8n.pt')
+model = YOLO('yolo26n.pt')
 
 # Vytvoření složek
 for folder in [SLOZKA_ORIGINAL, SLOZKA_ANNOTATED]:
