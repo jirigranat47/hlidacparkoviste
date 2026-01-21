@@ -6,6 +6,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 from datetime import timezone
+from fastapi.responses import FileResponse
+import latest_image_service
 
 from threading import Thread
 import main as worker_module  # Importujeme modul workeru
@@ -94,6 +96,18 @@ def get_current():
     cur.close()
     conn.close()
     return data or {"count": 0}
+
+@app.get("/latest-image")
+def get_latest_image():
+    """
+    Vrátí nejnovější oanotovaný obrázek z parkoviště.
+    Pokud žádný obrázek neexistuje, vrátí 404.
+    """
+    image_path = latest_image_service.get_latest_annotated_image_path()
+    if image_path and os.path.exists(image_path):
+        return FileResponse(image_path, media_type="image/jpeg")
+    return {"error": "Image not found"}, 404
+
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
