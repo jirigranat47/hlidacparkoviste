@@ -30,9 +30,10 @@ VEHICLE_CLASSES = [2, 7]
 # Nastavení citlivosti detektoru (možné přepsat přes ENV)
 YOLO_CONF = float(os.getenv("YOLO_CONF", 0.25))
 YOLO_IOU = float(os.getenv("YOLO_IOU", 0.7))
+IMGSZ = int(os.getenv("IMGSZ", 1280))
 
 # Inicializace modelu
-model = YOLO('yolo26n.pt')
+model = YOLO('yolo26l.pt')
 
 # Vytvoření složek
 for folder in [SLOZKA_ORIGINAL, SLOZKA_ANNOTATED]:
@@ -146,7 +147,9 @@ def stahni_a_detekuj():
         
         # 3. DETEKCE AUT
         # Detekujeme na celém obrázku pro zachování kontextu (model lépe pozná auta)
-        results = model.predict(source=original_path, classes=VEHICLE_CLASSES, conf=YOLO_CONF, iou=YOLO_IOU, save=False, verbose=False)
+        print('Čas za hájení detekce:', datetime.now())
+        results = model.predict(source=original_path, classes=VEHICLE_CLASSES, conf=YOLO_CONF, iou=YOLO_IOU, imgsz=IMGSZ, save=False, verbose=False)
+        print('Čas ukončení detekce:', datetime.now())
         
         # Spočítáme počet detekovaných objektů UVNITŘ zóny
         count = 0
