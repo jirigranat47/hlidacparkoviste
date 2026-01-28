@@ -87,6 +87,70 @@ def get_stats():
             cur.close()
             conn.close()
 
+@app.get("/stats/history")
+def get_stats_history(date: str = None):
+    """
+    Vrátí průměrnou obsazenost za každou hodinu pro vybraný den.
+    Parametr date musí být ve formátu YYYY-MM-DD.
+    """
+    from datetime import datetime, date as dt_date
+    
+    # Validace parametru date
+    if not date:
+        return {"error": "Parametr 'date' je povinný (formát: YYYY-MM-DD)"}, 400
+    
+    try:
+        # Parsování data
+        selected_date = datetime.strptime(date, "%Y-%m-%d").date()
+        
+        # Kontrola, zda není datum v budoucnosti
+        if selected_date > dt_date.today():
+            return {"error": "Nelze zobrazit data z budoucnosti"}, 400
+            
+    except ValueError:
+        return {"error": "Neplatný formát data. Použijte YYYY-MM-DD"}, 400
+    
+    conn = get_db_connection()
+    if not conn:
+        return []
+    
+    try:
+        cur = conn.cursor()
+        # Dotaz pro získání průměrné obsazenosti za každou hodinu vybraného dne
+        query = """
+            SELECT
+                date_trunc('hour', timestamp) AS hour_bucket,
+                ROUND(AVG(count))::integer AS avg_count
+            FROM
+                parkoviste_zaznamy
+            WHERE
+                timestamp >= %s::date
+                AND timestamp < %s::date + INTERVAL '1 day'
+            GROUP BY
+                hour_bucket
+            ORDER BY
+                hour_bucket;
+        """
+        cur.execute(query, (date, date))
+        data = cur.fetchall()
+        
+        # Konverze na dict a přidání UTC časové zóny
+        result = []
+        for row in data:
+            row_dict = dict(row)
+            if row_dict.get('hour_bucket'):
+                row_dict['hour_bucket'] = row_dict['hour_bucket'].replace(tzinfo=timezone.utc)
+            result.append(row_dict)
+            
+        return result
+    except Exception as e:
+        print(f"API Error in get_stats_history: {e}")
+        return []
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+
 @app.get("/current")
 def get_current():
     conn = get_db_connection()
@@ -123,3 +187,7 @@ def startup_event():
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "version": APP_VERSION})
+
+@app.get("/history", response_class=HTMLResponse)
+def read_history(request: Request):
+    return templates.TemplateResponse("history.html", {"request": request, "version": APP_VERSION})

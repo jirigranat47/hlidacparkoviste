@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historie Parkování - Kostelec n. O.</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <div class="background-glob"></div>
+
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>Hlídač <span class="gradient-text">Parkoviště</span></h1>
+                <p class="subtitle">Kostelec nad Orlicí - Palackého náměstí</p>
+            </div>
+            <div class="date-indicator">
+                <span class="calendar-icon">📅</span>
+                <span id="selected-date">--</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="history-nav">
+                <button id="btn-prev-day" class="nav-button">
+                    <span class="arrow">←</span>
+                    Předchozí den
+                </button>
+                <a href="/" class="nav-button nav-button-home">
+                    🏠 Aktuální stav
+                </a>
+                <button id="btn-next-day" class="nav-button">
+                    Následující den
+                    <span class="arrow">→</span>
+                </button>
+            </div>
+
+            <div class="card chart-card">
+                <h2>Historie obsazenosti za vybraný den</h2>
+                <div class="chart-container">
+                    <canvas id="occupancyChart"></canvas>
+                </div>
+                <p class="chart-info" id="chart-info">Načítání...</p>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Hlídač Parkoviště | Vyvíjeno s ❤️ a AI</p>
+        </footer>
+    </div>
+
+    <script src="/static/history.js?v={{ version }}"></script>
+</body>
+
+</html>

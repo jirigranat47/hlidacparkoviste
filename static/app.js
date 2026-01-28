@@ -8,8 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Configuration
     const REFRESH_INTERVAL = 30000; // 30 seconds
-    const CAPACITY_THRESHOLD_LOW = 30;
-    const CAPACITY_THRESHOLD_HIGH = 40; // Example values, adjust based on real capacity
+    const CAPACITY_THRESHOLD_LOW = 35;
+    const CAPACITY_THRESHOLD_HIGH = 45; // Example values, adjust based on real capacity
 
     async function fetchCurrentData() {
         try {
