@@ -156,6 +156,7 @@ def get_stats_weekday(day: int = None):
     """
     Vrátí průměrnou obsazenost za každou hodinu pro vybraný den v týdnu.
     Parametr day: 0=neděle, 1=pondělí, 2=úterý, ..., 6=sobota (0-6)
+    Počítá průměry pouze z dat z posledních 6 měsíců.
     """
     # Validace parametru day
     if day is None:
@@ -172,6 +173,7 @@ def get_stats_weekday(day: int = None):
         cur = conn.cursor()
         # Dotaz pro získání průměrné obsazenosti za každou hodinu daného dne v týdnu
         # PostgreSQL: EXTRACT(DOW FROM timestamp) vrací 0=neděle, 1=pondělí, ..., 6=sobota
+        # Počítá průměry pouze z dat z posledních 6 měsíců
         query = """
             SELECT
                 EXTRACT(HOUR FROM timestamp)::integer AS hour,
@@ -180,6 +182,7 @@ def get_stats_weekday(day: int = None):
                 parkoviste_zaznamy
             WHERE
                 EXTRACT(DOW FROM timestamp) = %s
+                AND timestamp >= NOW() - INTERVAL '6 months'
             GROUP BY
                 hour
             ORDER BY

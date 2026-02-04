@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartInfoEl = document.getElementById('chart-info');
 
     let occupancyChart;
-    let currentDay = 1; // Výchozí: pondělí
+    let currentDay = new Date().getDay(); // Výchozí: aktuální den v týdnu
 
     // Názvy dní v týdnu
     const dayNames = {
