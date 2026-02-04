@@ -117,6 +117,14 @@ h1 {
     .grid {
         grid-template-columns: 1fr;
     }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    .subtitle {
+        font-size: 0.875rem;
+    }
 }
 
 /* Cards */
@@ -263,6 +271,9 @@ footer {
     font-weight: 600;
     font-size: 0.875rem;
     border: 1px solid rgba(56, 189, 248, 0.2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .calendar-icon {
@@ -309,6 +320,7 @@ footer {
 .nav-button-home {
     background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(129, 140, 248, 0.15) 100%);
     border-color: rgba(56, 189, 248, 0.3);
+    box-sizing: border-box;
 }
 
 .nav-button-home:hover {
@@ -329,11 +341,94 @@ footer {
 
 @media (max-width: 768px) {
     .history-nav {
+        display: flex;
         flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .history-nav .nav-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Statistics Page Styles */
+.day-selector {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.day-button {
+    padding: 1.25rem 1.5rem;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.day-button:hover {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: rgba(56, 189, 248, 0.3);
+    transform: translateY(-2px);
+}
+
+.day-button.active {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(129, 140, 248, 0.25) 100%);
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.selected-day-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.selected-day-label strong {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    header>div:last-child {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start !important;
     }
 
     .nav-button {
+        flex: 1;
+        min-width: calc(50% - 0.5rem);
+        justify-content: center;
+    }
+
+    .live-indicator {
         width: 100%;
         justify-content: center;
+    }
+
+    .day-selector {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .day-button {
+        padding: 1rem 0.75rem;
+        font-size: 0.875rem;
     }
 }

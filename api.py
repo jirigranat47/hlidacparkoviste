@@ -151,6 +151,55 @@ def get_stats_history(date: str = None):
             cur.close()
             conn.close()
 
+@app.get("/stats/weekday")
+def get_stats_weekday(day: int = None):
+    """
+    Vrátí průměrnou obsazenost za každou hodinu pro vybraný den v týdnu.
+    Parametr day: 0=neděle, 1=pondělí, 2=úterý, ..., 6=sobota (0-6)
+    """
+    # Validace parametru day
+    if day is None:
+        return {"error": "Parametr 'day' je povinný (0-6, kde 0=neděle, 1=pondělí, ..., 6=sobota)"}, 400
+    
+    if not isinstance(day, int) or day < 0 or day > 6:
+        return {"error": "Parametr 'day' musí být číslo 0-6 (0=neděle, 1=pondělí, ..., 6=sobota)"}, 400
+    
+    conn = get_db_connection()
+    if not conn:
+        return []
+    
+    try:
+        cur = conn.cursor()
+        # Dotaz pro získání průměrné obsazenosti za každou hodinu daného dne v týdnu
+        # PostgreSQL: EXTRACT(DOW FROM timestamp) vrací 0=neděle, 1=pondělí, ..., 6=sobota
+        query = """
+            SELECT
+                EXTRACT(HOUR FROM timestamp)::integer AS hour,
+                ROUND(AVG(count))::integer AS avg_count
+            FROM
+                parkoviste_zaznamy
+            WHERE
+                EXTRACT(DOW FROM timestamp) = %s
+            GROUP BY
+                hour
+            ORDER BY
+                hour;
+        """
+        cur.execute(query, (day,))
+        data = cur.fetchall()
+        
+        # Konverze na dict
+        result = [dict(row) for row in data]
+        
+        return result
+    except Exception as e:
+        print(f"API Error in get_stats_weekday: {e}")
+        return []
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+
 @app.get("/current")
 def get_current():
     conn = get_db_connection()
@@ -191,3 +240,7 @@ def read_root(request: Request):
 @app.get("/history", response_class=HTMLResponse)
 def read_history(request: Request):
     return templates.TemplateResponse("history.html", {"request": request, "version": APP_VERSION})
+
+@app.get("/statistics", response_class=HTMLResponse)
+def read_statistics(request: Request):
+    return templates.TemplateResponse("statistics.html", {"request": request, "version": APP_VERSION})

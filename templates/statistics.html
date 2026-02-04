@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historie Parkování - Kostelec n. O.</title>
+    <title>Statistiky podle dní - Kostelec n. O.</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,31 +21,33 @@
         <header>
             <div class="header-content">
                 <h1>Hlídač <span class="gradient-text">Parkoviště</span></h1>
-                <p class="subtitle">Kostelec nad Orlicí - Palackého náměstí</p>
+                <p class="subtitle">Statistiky podle dní v týdnu</p>
             </div>
-            <div class="date-indicator">
-                <span class="calendar-icon">📅</span>
-                <span id="selected-date">--</span>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <a href="/" class="nav-button" style="text-decoration: none;">
+                    🏠 Hlavní stránka
+                </a>
             </div>
         </header>
 
         <main>
-            <div class="history-nav">
-                <button id="btn-prev-day" class="nav-button">
-                    <span class="arrow">←</span>
-                    Předchozí den
-                </button>
-                <button id="btn-next-day" class="nav-button">
-                    Následující den
-                    <span class="arrow">→</span>
-                </button>
-                <a href="/" class="nav-button nav-button-home">
-                    🏠 Aktuální stav
-                </a>
+            <div class="card">
+                <h2>Výběr dne v týdnu</h2>
+                <div class="day-selector">
+                    <button class="day-button" data-day="1">Po</button>
+                    <button class="day-button" data-day="2">Út</button>
+                    <button class="day-button" data-day="3">St</button>
+                    <button class="day-button" data-day="4">Čt</button>
+                    <button class="day-button" data-day="5">Pá</button>
+                    <button class="day-button" data-day="6">So</button>
+                    <button class="day-button" data-day="0">Ne</button>
+                </div>
             </div>
 
             <div class="card chart-card">
-                <h2>Historie obsazenosti za vybraný den</h2>
+                <h2>Průměrná obsazenost během dne</h2>
+                <p class="selected-day-label" id="selected-day-label">Vybraný den: <strong
+                        id="selected-day-name">Pondělí</strong></p>
                 <div class="chart-container">
                     <canvas id="occupancyChart"></canvas>
                 </div>
@@ -58,7 +60,7 @@
         </footer>
     </div>
 
-    <script src="/static/history.js?v={{ version }}"></script>
+    <script src="/static/statistics.js?v={{ version }}"></script>
 </body>
 
 </html>
