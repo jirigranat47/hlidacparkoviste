@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css?v={{ version }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    {% include '_google_analytics.html' %}
 </head>
 
 <body>
@@ -50,27 +52,41 @@
                 </div>
 
                 <div class="card info-card">
-                    <h2>Informace</h2>
+                    <h2>O projektu</h2>
                     <ul class="info-list">
                         <li>
-                            <span class="icon">📍</span>
+                            <span class="icon">🤝</span>
                             <div>
-                                <strong>Lokalita</strong>
-                                <span>Palackého náměstí</span>
+                                <strong>Komunitní projekt</strong>
+                                <span>Cílem projektu je usnadnit parkování na náměstí a pomoci řidičům najít volné
+                                    místo</span>
                             </div>
                         </li>
                         <li>
-                            <span class="icon">🕒</span>
+                            <span class="icon">📹</span>
                             <div>
-                                <strong>Interval měření</strong>
-                                <span>Každých 5 minut</span>
+                                <strong>Monitorování</strong>
+                                <span>Projekt pracuje s kamerou na náměstí a kontroluje 40-45 viditelných parkovacích
+                                    míst</span>
                             </div>
                         </li>
                         <li>
                             <span class="icon">🤖</span>
                             <div>
-                                <strong>Technologie</strong>
-                                <span>AI detekce (YOLOv8)</span>
+                                <strong>AI detekce (YOLOv8)</strong>
+                                <span>Natrénovaný model rozpoznává vozidla, ale nemůže být vždy 100% přesný jako lidské
+                                    oko</span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="icon">🖼️</span>
+                            <div>
+                                <strong>Poslední snímek</strong>
+                                <span><a href="/latest-image" target="_blank"
+                                        style="color: #60a5fa; text-decoration: none;"
+                                        onclick="if(typeof gtag !== 'undefined') { gtag('event', 'view_latest_image', { 'event_category': 'engagement', 'event_label': 'Latest Image View' }); }">Zobrazit
+                                        rozpoznaný
+                                        obrázek</a></span>
                             </div>
                         </li>
                     </ul>
