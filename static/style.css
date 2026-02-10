@@ -222,14 +222,15 @@ h2 {
 }
 
 .icon {
-    width: 40px;
-    height: 40px;
+    width: 20px;
+    height: 20px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.25rem;
+    flex-shrink: 0;
 }
 
 .info-list strong {
@@ -430,5 +431,90 @@ footer {
     .day-button {
         padding: 1rem 0.75rem;
         font-size: 0.875rem;
+    }
+}
+
+
+/* Latest Image Page Styles */
+.latest-page .image-container {
+    width: 100%;
+    height: calc(100vh - 250px);
+    min-height: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.latest-page .latest-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.latest-page .source-info {
+    margin-bottom: 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .latest-page .container {
+        /* Obnovení standardního paddingu pro header */
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    .latest-page header {
+        flex-shrink: 0;
+    }
+
+    .latest-page main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        /* Negativní margin pro roztažení obsahu (obrázku) do šířky */
+        /* 2rem padding containeru - 0.5rem chtěný padding = 1.5rem negativní margin */
+        margin-left: -1.5rem;
+        margin-right: -1.5rem;
+        width: calc(100% + 3rem);
+        /* Kompenzace spodního paddingu containeru */
+        margin-bottom: -2rem;
+    }
+
+    .latest-page .card {
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .latest-page .source-info {
+        font-size: 0.75rem;
+        margin-bottom: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .latest-page .image-container {
+        flex: 1;
+        height: auto;
+        min-height: 0;
+        aspect-ratio: unset;
+        border-radius: 0.5rem;
+    }
+
+    .latest-page footer {
+        display: none;
     }
 }

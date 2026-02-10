@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Aktuální snímek z parkoviště na Palackého náměstí v Kostelci nad Orlicí. Obraz je aktualizován každých 5 minut a analyzován AI.">
+    <title>Aktuální Snímek Parkoviště - Kostelec nad Orlicí | Hlídač Parkoviště</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}">
+
+    {% include '_google_analytics.html' %}
+</head>
+
+<body class="latest-page">
+
+    <div class="background-glob"></div>
+
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>Hlídač <span class="gradient-text">Parkoviště</span></h1>
+                <p class="subtitle">Poslední zpracovaný snímek</p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <a href="/" class="nav-button nav-button-home" style="text-decoration: none;">
+                    🏠 Aktuální stav
+                </a>
+            </div>
+        </header>
+
+        <main>
+            <div class="card">
+                <div class="source-info">
+                    <span class="icon" style="width: 24px; height: 24px; font-size: 1rem;">ℹ️</span>
+                    <span>
+                        Tento obrázek je získáván z městské webové kamery a je zpracováván každých 5 minut pomocí AI
+                        modelu pro detekci vozidel.
+                    </span>
+                </div>
+                <div class="image-container">
+                    <img src="/latest-image" alt="Aktuální snímek parkoviště s detekcí obsazenosti"
+                        class="latest-image">
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Hlídač Parkoviště | Vyvíjeno s ❤️ a AI</p>
+        </footer>
+    </div>
+
+    <script>
+        // Automatický reload stránky každých 2 minuty (120000 ms) pro aktualizaci obrázku
+        setTimeout(function () {
+            window.location.reload();
+        }, 120000);
+    </script>
+</body>
+
+</html>

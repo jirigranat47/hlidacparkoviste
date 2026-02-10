@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Sledujte aktuální obsazenost parkoviště na Palackého náměstí v Kostelci nad Orlicí v reálném čase. AI detekce pomocí kamerového systému monitoruje 40-45 parkovacích míst každých 5 minut.">
+        content="Parkování v Kostelci nad Orlicí - Sledujte volná parkovací místa na Palackého náměstí v reálném čase. Smart parkování s AI detekcí obsazenosti. Komunitní projekt pro snadnější parkování ve městě.">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://parkoviste-kostelec.up.railway.app/">
-    <meta property="og:title" content="Hlídač Parkoviště - Kostelec nad Orlicí">
+    <meta property="og:title" content="Parkování Kostelec nad Orlicí - Volná Místa | Hlídač Parkoviště">
     <meta property="og:description"
-        content="Sledujte aktuální obsazenost parkoviště na Palackého náměstí v reálném čase. AI detekce pomocí kamerového systému monitoruje 40-45 parkovacích míst každých 5 minut.">
+        content="Parkování v Kostelci nad Orlicí - Sledujte volná parkovací místa na Palackého náměstí v reálném čase. Smart parkování s AI detekcí obsazenosti.">
     <meta property="og:image" content="https://parkoviste-kostelec.up.railway.app/static/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -22,12 +22,12 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://parkoviste-kostelec.up.railway.app/">
-    <meta name="twitter:title" content="Hlídač Parkoviště - Kostelec nad Orlicí">
+    <meta name="twitter:title" content="Parkování Kostelec nad Orlicí - Volná Místa | Hlídač Parkoviště">
     <meta name="twitter:description"
         content="Sledujte aktuální obsazenost parkoviště na Palackého náměstí v reálném čase. AI detekce pomocí kamerového systému.">
     <meta name="twitter:image" content="https://parkoviste-kostelec.up.railway.app/static/og-image.png">
 
-    <title>Hlídač Parkoviště - Kostelec n. O.</title>
+    <title>Parkování Kostelec nad Orlicí - Volná Místa na Palackého Náměstí | Hlídač Parkoviště</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,10 +55,10 @@
                 <a href="/history" class="nav-button" style="text-decoration: none;">
                     📊 Historie
                 </a>
-                <div class="live-indicator">
+                <a href="/latest" class="live-indicator" style="text-decoration: none;">
                     <span class="dot"></span>
                     LIVE
-                </div>
+                </a>
             </div>
         </header>
 
@@ -96,7 +96,7 @@
                         <li>
                             <span class="icon">🤖</span>
                             <div>
-                                <strong>AI detekce (YOLOv8)</strong>
+                                <strong>AI detekce (YOLOv26)</strong>
                                 <span>Natrénovaný model rozpoznává vozidla, ale nemůže být vždy 100% přesný jako lidské
                                     oko</span>
                             </div>
@@ -105,11 +105,9 @@
                             <span class="icon">🖼️</span>
                             <div>
                                 <strong>Poslední snímek</strong>
-                                <span><a href="/latest-image" target="_blank"
-                                        style="color: #60a5fa; text-decoration: none;"
-                                        onclick="if(typeof gtag !== 'undefined') { gtag('event', 'view_latest_image', { 'event_category': 'engagement', 'event_label': 'Latest Image View' }); }">Zobrazit
-                                        rozpoznaný
-                                        obrázek</a></span>
+                                <span>Přes tlačítko Live je možné se podívat na poslední zpracovaný snímek a
+                                    zkontrolovat
+                                    schopnosti AI</span>
                             </div>
                         </li>
                     </ul>

@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historie Parkování - Kostelec n. O.</title>
+    <meta name="description"
+        content="Historie parkování v Kostelci nad Orlicí - zobrazení obsazenosti parkoviště na Palackého náměstí podle dnů a hodin. Historická data smart parkování.">
+    <title>Historie Parkování Kostelec - Obsazenost podle Dnů | Hlídač Parkoviště</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,10 +27,12 @@
                 <h1>Hlídač <span class="gradient-text">Parkoviště</span></h1>
                 <p class="subtitle">Kostelec nad Orlicí - Palackého náměstí</p>
             </div>
-            <div class="date-indicator">
-                <span class="calendar-icon">📅</span>
-                <span id="selected-date">--</span>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <a href="/" class="nav-button" style="text-decoration: none;">
+                    🏠 Aktuální stav
+                </a>
             </div>
+
         </header>
 
         <main>
@@ -41,9 +45,10 @@
                     Následující den
                     <span class="arrow">→</span>
                 </button>
-                <a href="/" class="nav-button nav-button-home">
-                    🏠 Aktuální stav
-                </a>
+                <div class="date-indicator">
+                    <span class="calendar-icon">📅</span>
+                    <span id="selected-date">--</span>
+                </div>
             </div>
 
             <div class="card chart-card">

@@ -247,3 +247,7 @@ def read_history(request: Request):
 @app.get("/statistics", response_class=HTMLResponse)
 def read_statistics(request: Request):
     return templates.TemplateResponse("statistics.html", {"request": request, "version": APP_VERSION})
+
+@app.get("/latest", response_class=HTMLResponse)
+def read_latest(request: Request):
+    return templates.TemplateResponse("latest.html", {"request": request, "version": APP_VERSION})
