@@ -15,9 +15,9 @@ import main as worker_module  # Importujeme modul workeru
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-# Verze aplikace pro cache-busting (načítá z ENV nebo použije timestamp)
-import time
-APP_VERSION = os.getenv("APP_VERSION", str(int(time.time())))
+# Verze aplikace pro cache-busting
+APP_VERSION = "1.0.3"
+print(f"System: Verze aplikace: {APP_VERSION}")
 
 # Konfigurace připojení
 # Railway poskytuje 'DATABASE_URL', lokálně používáme jednotlivé proměnné nebo také DATABASE_URL

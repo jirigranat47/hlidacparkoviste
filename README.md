@@ -31,8 +31,16 @@ Aplikace v pravidelných intervalech (10 min) stahuje obraz z veřejné webkamer
 - `GET /stats` - Průměrná obsazenost za posledních 24 hodin (JSON)
 - `GET /stats/history?date=YYYY-MM-DD` - Data pro konkrétní den (JSON)
 - `GET /stats/weekday?day=0-6` - Průměry pro den v týdnu (0=neděle, 6=sobota) (JSON)
+- `GET /latest` - Stránka zobrazující poslední anotovaný snímek z kamery
 - `GET /latest-image` - Nejnovější anotovaný snímek z kamery
 
 ## Rychlé spuštění
 ```bash
 docker-compose up -d --build
+## Správa verzí
+Verze aplikace je definována v souboru api.py.
+
+`python
+APP_VERSION = "1.0.3"
+``
+Pro změnu verze stačí upravit tuto konstantu a restartovat aplikaci (nebo pokračovat na auto-reload).
