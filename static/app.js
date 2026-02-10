@@ -11,6 +11,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const CAPACITY_THRESHOLD_LOW = 30;
     const CAPACITY_THRESHOLD_HIGH = 40; // Example values, adjust based on real capacity
 
+    function loadStoredData() {
+        const stored = localStorage.getItem('lastOccupancy');
+        if (stored) {
+            try {
+                const data = JSON.parse(stored);
+                // Check if data is not too old (e.g. 24 hours) - optional, but good practice
+                // For now, just show it as requested
+                currentCountEl.textContent = data.count;
+                currentCountEl.classList.remove('loading');
+                updateStatus(data.count);
+
+                const date = new Date(data.timestamp);
+                lastUpdatedEl.textContent = date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+
+                // Add a visual indicator that this is old data, if needed. 
+                // The user requested "remember last displayed value".
+                // We could add (cached) to the time, but simpler is better.
+            } catch (e) {
+                console.error("Failed to parse stored data", e);
+            }
+        }
+    }
+
     async function fetchCurrentData() {
         try {
             const response = await fetch('/current');
@@ -25,8 +48,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const now = new Date();
             lastUpdatedEl.textContent = now.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 
+            // Store the data
+            localStorage.setItem('lastOccupancy', JSON.stringify({
+                count: count,
+                timestamp: now.getTime()
+            }));
+
         } catch (error) {
             console.error('Error fetching current data:', error);
+            // Only show error if we don't have stored data displayed?
+            // Actually, keep the error indicator but maybe keep the old value visible?
+            // The original code replaced text with "Chyba načítání".
+            // Let's modify to keep the old value if available but show a small error indicator? 
+            // Or just stick to original behavior for error, but load stored data initially.
+            // If fetch fails, we might want to keep showing the stored data but indicate it's stale.
+            // For now, let's stick to the user's robust error handling if fetch fails *after* success.
+            // But init logic is handled by loadStoredData.
+
+            // If we have content (from storage), maybe don't overwrite with "Error" immediately?
+            // The user didn't explicitly ask for offline mode, just "remember last value".
+            // Let's stick to the current error handling for simplicity, or maybe soft fail.
             statusBadgeEl.textContent = 'Chyba načítání';
             statusBadgeEl.className = 'status-badge status-red';
         }
@@ -140,11 +181,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initial load
+    // Load stored data immediately
+    loadStoredData();
+
+    // Initial load (network)
     fetchCurrentData();
     fetchStatsData();
 
     // Auto-refresh
     setInterval(fetchCurrentData, REFRESH_INTERVAL);
     setInterval(fetchStatsData, REFRESH_INTERVAL * 2); // Chart can handle slower updates
+
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+        });
+    }
 });

@@ -14,6 +14,7 @@ Aplikace v pravidelných intervalech (10 min) stahuje obraz z veřejné webkamer
 - ✅ **Denní statistiky**: Průměrná obsazenost podle dne v týdnu (založeno na 6měsíčních datech)
 - ✅ **Responzivní design**: Plně optimalizováno pro mobilní zařízení
 - ✅ **Barevný indikátor**: Vizuální rozlišení úrovně obsazenosti (zelená/žlutá/červená)
+- ✅ **PWA**: Přehledné zobrazení aktuálního stavu parkoviště
 
 ## Technologie
 - **Backend**: FastAPI (Python)
