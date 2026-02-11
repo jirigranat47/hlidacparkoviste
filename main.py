@@ -100,6 +100,7 @@ def cleanup_old_images():
     """Smaže obrázky starší než RETENTION_DAYS ze složek archive."""
     limit_date = datetime.now() - timedelta(days=RETENTION_DAYS)
     deleted_count = 0
+    print(f"[{datetime.now()}] CLEANUP: Mazání starých obrázků (starší než {RETENTION_DAYS} dnů, {limit_date}).")
     
     for folder in [SLOZKA_ORIGINAL, SLOZKA_ANNOTATED]:
         if not os.path.exists(folder):
