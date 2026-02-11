@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
-from datetime import timezone
+from datetime import timezone, datetime
 from fastapi.responses import FileResponse
 import latest_image_service
 
@@ -251,6 +251,69 @@ def read_statistics(request: Request):
 @app.get("/latest", response_class=HTMLResponse)
 def read_latest(request: Request):
     return templates.TemplateResponse("latest.html", {"request": request, "version": APP_VERSION})
+
+@app.get("/service/archive", response_class=HTMLResponse)
+def read_archive(request: Request):
+    return templates.TemplateResponse("archive.html", {"request": request, "version": APP_VERSION})
+
+@app.get("/api/archive/list")
+def list_archive_files():
+    """
+    Vrátí seznam souborů ve složce webcam_archive/annotated.
+    """
+    archive_dir = os.path.join("webcam_archive", "annotated")
+    if not os.path.exists(archive_dir):
+        return []
+
+    files = []
+    for filename in os.listdir(archive_dir):
+        file_path = os.path.join(archive_dir, filename)
+        if os.path.isfile(file_path):
+            stats = os.stat(file_path)
+            files.append({
+                "filename": filename,
+                "size": stats.st_size,
+                "modified": stats.st_mtime,
+                "modified_iso": datetime.fromtimestamp(stats.st_mtime, tz=timezone.utc).isoformat()
+            })
+    
+    # Seřadit od nejnovějších
+    files.sort(key=lambda x: x["modified"], reverse=True)
+    return files
+
+@app.get("/service/archive/download/{filename}")
+def download_archive_file(filename: str):
+    """
+    Umožní stáhnutí souboru z archivu.
+    """
+    # Bezpečnostní kontrola - filename nesmí obsahovat cesty
+    if ".." in filename or "/" in filename or "\\" in filename:
+         return {"error": "Invalid filename"}, 400
+         
+    archive_dir = os.path.join("webcam_archive", "annotated")
+    file_path = os.path.join(archive_dir, filename)
+    
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return FileResponse(file_path, filename=filename)
+    
+    return {"error": "File not found"}, 404
+
+@app.get("/service/archive/view/{filename}")
+def view_archive_file(filename: str):
+    """
+    Zobrazí soubor z archivu (inline).
+    """
+    # Bezpečnostní kontrola
+    if ".." in filename or "/" in filename or "\\" in filename:
+         return {"error": "Invalid filename"}, 400
+         
+    archive_dir = os.path.join("webcam_archive", "annotated")
+    file_path = os.path.join(archive_dir, filename)
+    
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return FileResponse(file_path, media_type="image/jpeg")
+    
+    return {"error": "File not found"}, 404
 
 @app.get("/sw.js", include_in_schema=False)
 def service_worker(request: Request):
