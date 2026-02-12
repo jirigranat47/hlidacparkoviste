@@ -6,6 +6,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 from datetime import timezone, datetime
+from zoneinfo import ZoneInfo
 from fastapi.responses import FileResponse
 import latest_image_service
 
@@ -16,7 +17,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 # Verze aplikace pro cache-busting
-APP_VERSION = "1.0.3"
+APP_VERSION = "1.0.4"
 print(f"System: Verze aplikace: {APP_VERSION}")
 
 # Konfigurace připojení
@@ -250,7 +251,23 @@ def read_statistics(request: Request):
 
 @app.get("/latest", response_class=HTMLResponse)
 def read_latest(request: Request):
-    return templates.TemplateResponse("latest.html", {"request": request, "version": APP_VERSION})
+    # Získání času posledního snímku
+    image_path = latest_image_service.get_latest_annotated_image_path()
+    last_updated = "Není k dispozici"
+    
+    if image_path and os.path.exists(image_path):
+        timestamp = os.path.getmtime(image_path)
+        # Převedení na časové pásmo Praha
+        prague_tz = ZoneInfo("Europe/Prague")
+        dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        dt_prague = dt_utc.astimezone(prague_tz)
+        last_updated = dt_prague.strftime("%d.%m.%Y %H:%M:%S")
+        
+    return templates.TemplateResponse("latest.html", {
+        "request": request, 
+        "version": APP_VERSION,
+        "last_updated": last_updated
+    })
 
 @app.get("/service/archive", response_class=HTMLResponse)
 def read_archive(request: Request):
