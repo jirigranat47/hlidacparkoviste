@@ -80,6 +80,25 @@
                         <span class="label">vozidel</span>
                     </div>
                     <div id="status-badge" class="status-badge">Načítání...</div>
+
+                    <!-- Informace o parkování -->
+                    <div class="parking-info" id="parking-info">
+                        <div class="parking-status-row">
+                            <span id="parking-status-badge" class="parking-status-badge">
+                                <span class="parking-icon">🅿️</span>
+                                <span id="parking-status-text">Načítání...</span>
+                            </span>
+                        </div>
+                        <div class="parking-countdown-row">
+                            <span class="parking-countdown-label" id="parking-countdown-label">Do změny:</span>
+                            <span class="parking-countdown" id="parking-countdown">--:--</span>
+                        </div>
+                        <div class="parking-price-row">
+                            <span class="parking-price-icon">💰</span>
+                            <span class="parking-price-text">1. hod: 10 Kč • další: 20 Kč/hod</span>
+                        </div>
+                    </div>
+
                     <p class="last-updated">Aktualizováno: <span id="last-updated-time">--:--</span></p>
                 </div>
 
@@ -121,12 +140,12 @@
                         </li>
                     </ul>
                 </div>
-            </div>
 
-            <div class="card chart-card">
-                <h2>Historie obsazenosti (posledních 24h)</h2>
-                <div class="chart-container">
-                    <canvas id="occupancyChart"></canvas>
+                <div class="card chart-card">
+                    <h2>Historie obsazenosti (posledních 24h)</h2>
+                    <div class="chart-container">
+                        <canvas id="occupancyChart"></canvas>
+                    </div>
                 </div>
             </div>
         </main>

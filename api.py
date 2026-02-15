@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
-from datetime import timezone, datetime
+from datetime import timezone, datetime, timedelta
 from zoneinfo import ZoneInfo
 from fastapi.responses import FileResponse
 import latest_image_service
@@ -15,6 +15,96 @@ import main as worker_module  # Importujeme modul workeru
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+
+def get_parking_status():
+    """
+    Vypočítá aktuální stav parkování (placené/zdarma) a čas do změny stavu.
+    
+    Pravidla:
+    - Pondělí-Pátek: 6:00-18:00 placené, jinak zdarma
+    - Sobota: 6:00-12:00 placené, jinak zdarma
+    - Neděle: celý den zdarma
+    
+    Ceny:
+    - První hodina: 10 Kč
+    - Každá další hodina: 20 Kč
+    
+    Returns:
+        dict: Informace o stavu parkování
+    """
+    prague_tz = ZoneInfo("Europe/Prague")
+    now = datetime.now(prague_tz)
+    
+    weekday = now.weekday()  # 0=pondělí, 6=neděle
+    hour = now.hour
+    minute = now.minute
+    
+    is_paid = False
+    next_change = None
+    
+    # Neděle (6) - celý den zdarma
+    if weekday == 6:
+        is_paid = False
+        # Další změna je pondělí v 6:00
+        days_until_monday = (7 - weekday) % 7 or 7  # 1 den
+        next_change = now.replace(hour=6, minute=0, second=0, microsecond=0)
+        next_change = next_change + timedelta(days=days_until_monday)
+    
+    # Sobota (5)
+    elif weekday == 5:
+        if 6 <= hour < 12:
+            is_paid = True
+            # Další změna je dnes v 12:00
+            next_change = now.replace(hour=12, minute=0, second=0, microsecond=0)
+        elif hour < 6:
+            is_paid = False
+            # Další změna je dnes v 6:00
+            next_change = now.replace(hour=6, minute=0, second=0, microsecond=0)
+        else:  # hour >= 12
+            is_paid = False
+            # Další změna je pondělí v 6:00
+            next_change = now.replace(hour=6, minute=0, second=0, microsecond=0) + timedelta(days=2)
+    
+    # Pondělí-Pátek (0-4)
+    else:
+        if 6 <= hour < 18:
+            is_paid = True
+            # Další změna je dnes v 18:00
+            next_change = now.replace(hour=18, minute=0, second=0, microsecond=0)
+        elif hour < 6:
+            is_paid = False
+            # Další změna je dnes v 6:00
+            next_change = now.replace(hour=6, minute=0, second=0, microsecond=0)
+        else:  # hour >= 18
+            is_paid = False
+            # Další změna je zítra v 6:00 (nebo v pondělí pokud je pátek)
+            days_to_add = 3 if weekday == 4 else 1  # Pátek -> pondělí
+            next_change = now.replace(hour=6, minute=0, second=0, microsecond=0) + timedelta(days=days_to_add)
+    
+    # Vypočítat čas do změny
+    time_diff = next_change - now
+    hours_until = int(time_diff.total_seconds() // 3600)
+    minutes_until = int((time_diff.total_seconds() % 3600) // 60)
+    
+    return {
+        "is_paid": is_paid,
+        "next_change": next_change.isoformat(),
+        "time_until_change": {
+            "hours": hours_until,
+            "minutes": minutes_until,
+            "total_seconds": int(time_diff.total_seconds())
+        },
+        "pricing": {
+            "first_hour": 10,
+            "additional_hour": 20,
+            "currency": "Kč"
+        },
+        "schedule": {
+            "weekdays": "Po-Pá 6:00-18:00",
+            "saturday": "So 6:00-12:00",
+            "sunday": "Zdarma"
+        }
+    }
 
 # Verze aplikace pro cache-busting
 APP_VERSION = "1.0.4"
@@ -212,7 +302,12 @@ def get_current():
     data = cur.fetchone()
     cur.close()
     conn.close()
-    return data or {"count": 0}
+    
+    # Přidat informace o parkování
+    result = data or {"count": 0}
+    result["parking_status"] = get_parking_status()
+    
+    return result
 
 @app.get("/latest-image")
 def get_latest_image():

@@ -4,7 +4,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const lastUpdatedEl = document.getElementById('last-updated-time');
     const ctx = document.getElementById('occupancyChart').getContext('2d');
 
+    // Parking status elements
+    const parkingStatusBadge = document.getElementById('parking-status-badge');
+    const parkingStatusText = document.getElementById('parking-status-text');
+    const parkingCountdown = document.getElementById('parking-countdown');
+    const parkingCountdownLabel = document.getElementById('parking-countdown-label');
+
     let occupancyChart;
+    let countdownInterval = null;
+    let countdownEndTime = null;
 
     // Configuration
     const REFRESH_INTERVAL = 30000; // 30 seconds
@@ -24,6 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const date = new Date(data.timestamp);
                 lastUpdatedEl.textContent = date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+
+                // Restore parking status if available
+                if (data.parking_status) {
+                    updateParkingStatus(data.parking_status);
+                }
 
                 // Add a visual indicator that this is old data, if needed. 
                 // The user requested "remember last displayed value".
@@ -48,11 +61,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const now = new Date();
             lastUpdatedEl.textContent = now.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 
-            // Store the data
-            localStorage.setItem('lastOccupancy', JSON.stringify({
+            // Store the data including parking status
+            const storageData = {
                 count: count,
                 timestamp: now.getTime()
-            }));
+            };
+
+            if (data.parking_status) {
+                storageData.parking_status = data.parking_status;
+            }
+
+            localStorage.setItem('lastOccupancy', JSON.stringify(storageData));
+
+            // Update parking status if available
+            if (data.parking_status) {
+                updateParkingStatus(data.parking_status);
+            }
 
         } catch (error) {
             console.error('Error fetching current data:', error);
@@ -179,6 +203,99 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+    }
+
+    function updateParkingStatus(parkingStatus) {
+        const isPaid = parkingStatus.is_paid;
+        const timeUntil = parkingStatus.time_until_change;
+
+        // Update status badge
+        parkingStatusBadge.classList.remove('paid', 'free');
+        parkingStatusBadge.classList.add(isPaid ? 'paid' : 'free');
+        parkingStatusText.textContent = isPaid ? 'Parkování placené' : 'Parkování zdarma';
+
+        // Update countdown label based on state
+        if (isPaid) {
+            parkingCountdownLabel.textContent = 'Zdarma za:';
+        } else {
+            parkingCountdownLabel.textContent = 'Placené za:';
+        }
+
+        // Calculate countdown end time
+        const now = new Date();
+        countdownEndTime = new Date(now.getTime() + (timeUntil.total_seconds * 1000));
+
+        // Store countdown end time
+        localStorage.setItem('parkingCountdownEnd', countdownEndTime.toISOString());
+
+        // Start countdown timer if not already running
+        if (!countdownInterval) {
+            startCountdownTimer();
+        }
+    }
+
+    function startCountdownTimer() {
+        // Clear any existing interval
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+
+        // Update immediately
+        updateCountdownDisplay();
+
+        // Update every second
+        countdownInterval = setInterval(updateCountdownDisplay, 1000);
+    }
+
+    function updateCountdownDisplay() {
+        if (!countdownEndTime) {
+            // Try to load from storage
+            const stored = localStorage.getItem('parkingCountdownEnd');
+            if (stored) {
+                countdownEndTime = new Date(stored);
+            } else {
+                parkingCountdown.textContent = '--:--';
+                return;
+            }
+        }
+
+        const now = new Date();
+        const diff = countdownEndTime - now;
+
+        if (diff <= 0) {
+            // Time's up, fetch new data
+            parkingCountdown.textContent = '00:00:00';
+            // The next API call will update the status
+            return;
+        }
+
+        const totalHours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        // Pokud je více než 24 hodin, zobraz dny
+        if (totalHours >= 24) {
+            const days = Math.floor(totalHours / 24);
+            const hours = totalHours % 24;
+
+            // České skloňování: 1 den, 2-4 dny, 5+ dnů
+            let dayLabel;
+            if (days === 1) {
+                dayLabel = 'den';
+            } else if (days >= 2 && days <= 4) {
+                dayLabel = 'dny';
+            } else {
+                dayLabel = 'dnů';
+            }
+
+            parkingCountdown.textContent = `${days} ${dayLabel} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        // Format as HH:MM:SS or MM:SS if less than 24 hours
+        else if (totalHours > 0) {
+            parkingCountdown.textContent = `${totalHours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        } else {
+            parkingCountdown.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+        }
     }
 
     // Load stored data immediately
