@@ -107,7 +107,7 @@ def get_parking_status():
     }
 
 # Verze aplikace pro cache-busting
-APP_VERSION = "1.0.4"
+APP_VERSION = "1.0.5"
 print(f"System: Verze aplikace: {APP_VERSION}")
 
 # Konfigurace připojení
