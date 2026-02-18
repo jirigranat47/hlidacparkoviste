@@ -142,7 +142,14 @@
                 </div>
 
                 <div class="card chart-card">
-                    <h2>Historie obsazenosti (posledních 24h)</h2>
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="margin-bottom: 0;">Historie obsazenosti (24h)</h2>
+                        <div class="toggle-group">
+                            <button id="btn-chart-hourly" class="toggle-btn active">Průměry</button>
+                            <button id="btn-chart-detail" class="toggle-btn">Detail</button>
+                        </div>
+                    </div>
                     <div class="chart-container">
                         <canvas id="occupancyChart"></canvas>
                     </div>

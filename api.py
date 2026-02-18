@@ -118,7 +118,7 @@ def get_parking_status():
     }
 
 # Verze aplikace pro cache-busting
-APP_VERSION = "1.0.5"
+APP_VERSION = "1.0.6"
 print(f"System: Verze aplikace: {APP_VERSION}")
 
 # Konfigurace připojení
@@ -146,7 +146,7 @@ def get_db_connection():
 
 
 @app.get("/stats")
-def get_stats():
+def get_stats(detail: bool = False):
     conn = get_db_connection()
     if not conn:
         return [] # V případě chyby připojení vrátí prázdný seznam
@@ -155,19 +155,32 @@ def get_stats():
         cur = conn.cursor()
         # Dotaz pro získání průměrné obsazenosti za každou hodinu
         # v posledních 24 hodinách. Data jsou seřazena chronologicky.
-        query = """
-            SELECT
-                date_trunc('hour', timestamp) AS hour_bucket,
-                ROUND(AVG(count))::integer AS avg_count
-            FROM
-                parkoviste_zaznamy
-            WHERE
-                timestamp >= NOW() - INTERVAL '24 hours'
-            GROUP BY
-                hour_bucket
-            ORDER BY
-                hour_bucket;
-        """
+        if detail:
+             query = """
+                SELECT
+                    timestamp,
+                    count
+                FROM
+                    parkoviste_zaznamy
+                WHERE
+                    timestamp >= NOW() - INTERVAL '24 hours'
+                ORDER BY
+                    timestamp;
+            """
+        else:
+            query = """
+                SELECT
+                    date_trunc('hour', timestamp) AS hour_bucket,
+                    ROUND(AVG(count))::integer AS avg_count
+                FROM
+                    parkoviste_zaznamy
+                WHERE
+                    timestamp >= NOW() - INTERVAL '24 hours'
+                GROUP BY
+                    hour_bucket
+                ORDER BY
+                    hour_bucket;
+            """
         cur.execute(query)
         data = cur.fetchall()
         
@@ -177,6 +190,8 @@ def get_stats():
             row_dict = dict(row)
             if row_dict.get('hour_bucket'):
                 row_dict['hour_bucket'] = row_dict['hour_bucket'].replace(tzinfo=timezone.utc)
+            if row_dict.get('timestamp'):
+                row_dict['timestamp'] = row_dict['timestamp'].replace(tzinfo=timezone.utc)
             result.append(row_dict)
             
         return result
@@ -190,7 +205,7 @@ def get_stats():
             conn.close()
 
 @app.get("/stats/history")
-def get_stats_history(date: str = None):
+def get_stats_history(date: str = None, detail: bool = False):
     """
     Vrátí průměrnou obsazenost za každou hodinu pro vybraný den.
     Parametr date musí být ve formátu YYYY-MM-DD.
@@ -219,21 +234,36 @@ def get_stats_history(date: str = None):
     try:
         cur = conn.cursor()
         # Dotaz pro získání průměrné obsazenosti za každou hodinu vybraného dne
-        query = """
-            SELECT
-                date_trunc('hour', timestamp) AS hour_bucket,
-                ROUND(AVG(count))::integer AS avg_count
-            FROM
-                parkoviste_zaznamy
-            WHERE
-                timestamp >= %s::date
-                AND timestamp < %s::date + INTERVAL '1 day'
-            GROUP BY
-                hour_bucket
-            ORDER BY
-                hour_bucket;
-        """
-        cur.execute(query, (date, date))
+        if detail:
+            query = """
+                SELECT
+                    timestamp,
+                    count
+                FROM
+                    parkoviste_zaznamy
+                WHERE
+                    timestamp >= %s::date
+                    AND timestamp < %s::date + INTERVAL '1 day'
+                ORDER BY
+                    timestamp;
+            """
+            cur.execute(query, (date, date))
+        else:
+            query = """
+                SELECT
+                    date_trunc('hour', timestamp) AS hour_bucket,
+                    ROUND(AVG(count))::integer AS avg_count
+                FROM
+                    parkoviste_zaznamy
+                WHERE
+                    timestamp >= %s::date
+                    AND timestamp < %s::date + INTERVAL '1 day'
+                GROUP BY
+                    hour_bucket
+                ORDER BY
+                    hour_bucket;
+            """
+            cur.execute(query, (date, date))
         data = cur.fetchall()
         
         # Konverze na dict a přidání UTC časové zóny
@@ -242,6 +272,8 @@ def get_stats_history(date: str = None):
             row_dict = dict(row)
             if row_dict.get('hour_bucket'):
                 row_dict['hour_bucket'] = row_dict['hour_bucket'].replace(tzinfo=timezone.utc)
+            if row_dict.get('timestamp'):
+                row_dict['timestamp'] = row_dict['timestamp'].replace(tzinfo=timezone.utc)
             result.append(row_dict)
             
         return result

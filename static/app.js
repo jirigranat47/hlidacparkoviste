@@ -14,6 +14,31 @@ document.addEventListener('DOMContentLoaded', () => {
     let countdownInterval = null;
     let countdownEndTime = null;
 
+    // Chart toggle logic
+    let isDetailedView = false;
+    const btnChartHourly = document.getElementById('btn-chart-hourly');
+    const btnChartDetail = document.getElementById('btn-chart-detail');
+
+    if (btnChartHourly && btnChartDetail) {
+        btnChartHourly.addEventListener('click', () => {
+            if (isDetailedView) {
+                isDetailedView = false;
+                btnChartHourly.classList.add('active');
+                btnChartDetail.classList.remove('active');
+                fetchStatsData();
+            }
+        });
+
+        btnChartDetail.addEventListener('click', () => {
+            if (!isDetailedView) {
+                isDetailedView = true;
+                btnChartDetail.classList.add('active');
+                btnChartHourly.classList.remove('active');
+                fetchStatsData();
+            }
+        });
+    }
+
     // Configuration
     const REFRESH_INTERVAL = 30000; // 30 seconds
     const CAPACITY_THRESHOLD_LOW = 30;
@@ -117,14 +142,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchStatsData() {
         try {
-            const response = await fetch('/stats');
+            const url = isDetailedView ? '/stats?detail=true' : '/stats';
+            const response = await fetch(url);
             const data = await response.json(); // Data is already sorted ASC
 
-            const labels = data.map(d => {
-                const date = new Date(d.hour_bucket);
-                return date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }); // Show hour, e.g., "14:00"
-            });
-            const counts = data.map(d => d.avg_count);
+            let labels, counts;
+
+            if (isDetailedView) {
+                labels = data.map(d => {
+                    const date = new Date(d.timestamp);
+                    return date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+                });
+                counts = data.map(d => d.count);
+            } else {
+                labels = data.map(d => {
+                    const date = new Date(d.hour_bucket);
+                    return date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }); // Show hour, e.g., "14:00"
+                });
+                counts = data.map(d => d.avg_count);
+            }
 
             renderChart(labels, counts);
 
@@ -147,15 +183,15 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Průměr vozidel',
+                    label: isDetailedView ? 'Počet vozidel' : 'Průměr vozidel',
                     data: dataPoints,
                     borderColor: '#38bdf8',
                     backgroundColor: gradient,
-                    borderWidth: 2,
+                    borderWidth: isDetailedView ? 1 : 2,
                     pointBackgroundColor: '#38bdf8',
                     pointBorderColor: '#fff',
-                    pointRadius: 3,
-                    pointHoverRadius: 5,
+                    pointRadius: isDetailedView ? 1 : 3,
+                    pointHoverRadius: isDetailedView ? 4 : 5,
                     fill: true,
                     tension: 0.4
                 }]

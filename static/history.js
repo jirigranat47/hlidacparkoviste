@@ -5,6 +5,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnPrevDay = document.getElementById('btn-prev-day');
     const btnNextDay = document.getElementById('btn-next-day');
 
+    // Chart toggle logic
+    let isDetailedView = false;
+    const btnChartHourly = document.getElementById('btn-chart-hourly');
+    const btnChartDetail = document.getElementById('btn-chart-detail');
+
+    if (btnChartHourly && btnChartDetail) {
+        btnChartHourly.addEventListener('click', () => {
+            if (isDetailedView) {
+                isDetailedView = false;
+                btnChartHourly.classList.add('active');
+                btnChartDetail.classList.remove('active');
+                loadDataForDate(currentDate);
+            }
+        });
+
+        btnChartDetail.addEventListener('click', () => {
+            if (!isDetailedView) {
+                isDetailedView = true;
+                btnChartDetail.classList.add('active');
+                btnChartHourly.classList.remove('active');
+                loadDataForDate(currentDate);
+            }
+        });
+    }
+
     let occupancyChart;
     let currentDate = new Date();
     // Nastavíme výchozí datum na včerejšek (protože dnes může mít neúplná data)
@@ -28,7 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchHistoryData(dateStr) {
         try {
-            const response = await fetch(`/stats/history?date=${dateStr}`);
+            const url = `/stats/history?date=${dateStr}${isDetailedView ? '&detail=true' : ''}`;
+            const response = await fetch(url);
             const data = await response.json();
 
             if (data.error) {
@@ -43,7 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return null;
             }
 
-            chartInfoEl.textContent = `Zobrazeno ${data.length} hodinových průměrů`;
+            chartInfoEl.textContent = isDetailedView
+                ? `Zobrazeno ${data.length} záznamů`
+                : `Zobrazeno ${data.length} hodinových průměrů`;
             chartInfoEl.style.color = '#94a3b8';
             return data;
 
@@ -69,15 +97,15 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Průměr vozidel',
+                    label: isDetailedView ? 'Počet vozidel' : 'Průměr vozidel',
                     data: dataPoints,
                     borderColor: '#38bdf8',
                     backgroundColor: gradient,
-                    borderWidth: 2,
+                    borderWidth: isDetailedView ? 1 : 2,
                     pointBackgroundColor: '#38bdf8',
                     pointBorderColor: '#fff',
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointRadius: isDetailedView ? 1 : 4,
+                    pointHoverRadius: isDetailedView ? 4 : 6,
                     fill: true,
                     tension: 0.4
                 }]
@@ -134,11 +162,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await fetchHistoryData(dateStr);
 
         if (data && data.length > 0) {
-            const labels = data.map(d => {
-                const date = new Date(d.hour_bucket);
-                return date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
-            });
-            const counts = data.map(d => d.avg_count);
+            let labels, counts;
+
+            if (isDetailedView) {
+                labels = data.map(d => {
+                    const date = new Date(d.timestamp);
+                    return date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+                });
+                counts = data.map(d => d.count);
+            } else {
+                labels = data.map(d => {
+                    const date = new Date(d.hour_bucket);
+                    return date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+                });
+                counts = data.map(d => d.avg_count);
+            }
             renderChart(labels, counts);
         } else {
             // Vykreslíme prázdný graf
