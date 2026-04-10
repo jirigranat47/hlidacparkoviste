@@ -377,15 +377,15 @@ def startup_event():
 
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
-    return templates.TemplateResponse("index.html", get_template_context(request))
+    return templates.TemplateResponse(request=request, name="index.html", context=get_template_context(request))
 
 @app.get("/history", response_class=HTMLResponse)
 def read_history(request: Request):
-    return templates.TemplateResponse("history.html", get_template_context(request))
+    return templates.TemplateResponse(request=request, name="history.html", context=get_template_context(request))
 
 @app.get("/statistics", response_class=HTMLResponse)
 def read_statistics(request: Request):
-    return templates.TemplateResponse("statistics.html", get_template_context(request))
+    return templates.TemplateResponse(request=request, name="statistics.html", context=get_template_context(request))
 
 @app.get("/latest", response_class=HTMLResponse)
 def read_latest(request: Request):
@@ -401,11 +401,11 @@ def read_latest(request: Request):
         dt_prague = dt_utc.astimezone(prague_tz)
         last_updated = dt_prague.strftime("%d.%m.%Y %H:%M:%S")
     
-    return templates.TemplateResponse("latest.html", get_template_context(request, last_updated=last_updated))
+    return templates.TemplateResponse(request=request, name="latest.html", context=get_template_context(request, last_updated=last_updated))
 
 @app.get("/service/archive", response_class=HTMLResponse)
 def read_archive(request: Request):
-    return templates.TemplateResponse("archive.html", get_template_context(request))
+    return templates.TemplateResponse(request=request, name="archive.html", context=get_template_context(request))
 
 @app.get("/api/archive/list")
 def list_archive_files():
@@ -468,4 +468,4 @@ def view_archive_file(filename: str):
 
 @app.get("/sw.js", include_in_schema=False)
 def service_worker(request: Request):
-    return templates.TemplateResponse("sw.js", {"request": request, "version": APP_VERSION}, media_type="application/javascript")
+    return templates.TemplateResponse(request=request, name="sw.js", context={"request": request, "version": APP_VERSION}, media_type="application/javascript")
