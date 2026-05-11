@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -11,6 +12,14 @@ from urllib.parse import urljoin
 from ultralytics import YOLO
 from dotenv import load_dotenv
 import parking_mask # Import definice masky
+
+# --- LOGOVÁNÍ ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 # Načtení environment proměnných z .env souboru (pokud existuje)
 load_dotenv()
@@ -50,6 +59,11 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "tajne_heslo")
 def get_db_connection():
     try:
         if DATABASE_URL:
+            # Pro Railway/produkci přidáme sslmode=require pokud není v URL
+            if "sslmode=" not in DATABASE_URL:
+                separator = "&" if "?" in DATABASE_URL else "?"
+                url_with_ssl = f"{DATABASE_URL}{separator}sslmode=require"
+                return psycopg2.connect(url_with_ssl, cursor_factory=RealDictCursor)
             return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         else:
             return psycopg2.connect(
@@ -58,7 +72,7 @@ def get_db_connection():
                 cursor_factory=RealDictCursor
             )
     except Exception as e:
-        print(f"API DB Error: {e}")
+        logger.error(f"DB Connection Error: {e}")
         return None
 
 def init_db():
@@ -75,11 +89,15 @@ def init_db():
                 );
             """)
             conn.commit()
-            cur.close()
-            conn.close()
-            print("Databáze inicializována.")
+            logger.info("Databáze inicializována.")
         except Exception as e:
-            print(f"Chyba inicializace DB: {e}")
+            logger.error(f"Chyba inicializace DB: {e}")
+        finally:
+            if conn:
+                cur.close()
+                conn.close()
+    else:
+        logger.error("Nelze inicializovat DB - nepodařilo se připojit.")
 
 def save_to_db(timestamp_str, count):
     conn = get_db_connection()
@@ -89,18 +107,22 @@ def save_to_db(timestamp_str, count):
             cur = conn.cursor()
             cur.execute("INSERT INTO parkoviste_zaznamy (timestamp, count) VALUES (%s, %s)", (dt, count))
             conn.commit()
-            cur.close()
-            conn.close()
-            print(f"Uloženo do DB: {dt} - {count} aut")
+            logger.info(f"Uloženo do DB: {dt} - {count} aut")
         except Exception as e:
-            print(f"Chyba při ukládání do DB: {e}")
+            logger.error(f"Chyba při ukládání do DB: {e}")
+        finally:
+            if conn:
+                cur.close()
+                conn.close()
+    else:
+        logger.error(f"Data neuložena - nepodařilo se připojit k DB (count: {count})")
 
 # --- POMOCNÉ FUNKCE ---
 def cleanup_old_images():
     """Smaže obrázky starší než RETENTION_DAYS ze složek archive."""
     limit_date = datetime.now() - timedelta(days=RETENTION_DAYS)
     deleted_count = 0
-    print(f"[{datetime.now()}] CLEANUP: Mazání starých obrázků (starší než {RETENTION_DAYS} dnů, {limit_date}).")
+    logger.info(f"CLEANUP: Mazání starých obrázků (starší než {RETENTION_DAYS} dnů, {limit_date}).")
     
     for folder in [SLOZKA_ORIGINAL, SLOZKA_ANNOTATED]:
         if not os.path.exists(folder):
@@ -116,24 +138,24 @@ def cleanup_old_images():
                         os.remove(filepath)
                         deleted_count += 1
             except Exception as e:
-                print(f"Chyba při mazání souboru {filepath}: {e}")
+                logger.error(f"Chyba při mazání souboru {filepath}: {e}")
     
     if deleted_count > 0:
-        print(f"[{datetime.now()}] CLEANUP: Smazáno {deleted_count} starých obrázků.")
+        logger.info(f"CLEANUP: Smazáno {deleted_count} starých obrázků.")
 
 def stahni_a_detekuj():
     try:
         # 1. Získání URL obrázku
-        response = requests.get(URL_STRANKY, timeout=10)
+        response = requests.get(URL_STRANKY, timeout=15)
         soup = BeautifulSoup(response.text, 'html.parser')
         img_tag = soup.find('img', alt=ALT_TEXT)
         
         if not img_tag:
-            print("Obrázek nenalezen.")
+            logger.warning("Obrázek nenalezen na stránce.")
             return
 
         img_url = urljoin(URL_STRANKY, img_tag['src'])
-        img_data = requests.get(img_url).content
+        img_data = requests.get(img_url, timeout=15).content
         
         # 2. Uložení originální fotky
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -197,18 +219,12 @@ def stahni_a_detekuj():
 
         result_plot = annotated_frame
 
-        print(f"[{datetime.now()}] Detekováno vozidel: {count}")
+        logger.info(f"Detekováno vozidel: {count}")
         
         # Uložení anotovaného obrázku
         if result_plot is not None:
             annotated_path = os.path.join(SLOZKA_ANNOTATED, filename)
             cv2.imwrite(annotated_path, result_plot)
-        else:
-             # Pokud se nic nenašlo nebo nastala chyba plotování, můžeme uložit original i do annotated, nebo nic.
-             # Zde uložíme alespoň original, aby bylo vidět co se dělo, i když bez boxů (když boxes=0, plot vrací čistý obr).
-             # Ale result_plot by měl být validní i když boxes=0.
-             pass
-
         
         # 4. ZÁPIS DO DATABÁZE
         save_to_db(timestamp, count)
@@ -217,35 +233,35 @@ def stahni_a_detekuj():
         cleanup_old_images()
 
     except Exception as e:
-        print(f"Chyba: {e}")
+        logger.error(f"Chyba ve stahni_a_detekuj: {e}")
 
 if __name__ == "__main__":
-    print("Čekám 5s na start databáze...")
+    logger.info("Čekám 5s na start databáze...")
     time.sleep(5)
     init_db()
     
     # Prvotní úklid při startu
-    print("Spouštím úklid starých souborů...")
+    logger.info("Spouštím úklid starých souborů...")
     cleanup_old_images()
     
-    print("Spouštím monitoring parkoviště...")
+    logger.info("Spouštím monitoring parkoviště...")
     stahni_a_detekuj()    
 
 def start_worker_loop():
     """Funkce pro spuštění workeru v samostatném vlákně"""
-    print("Worker: Čekám 5s na start databáze (zpožděný start)...")
+    logger.info("Worker: Čekám 5s na start databáze (zpožděný start)...")
     time.sleep(5) # Krátké čekání, api.py už bude běžet
     init_db()
     
-    print("Worker: Spouštím úklid starých souborů...")
+    logger.info("Worker: Spouštím úklid starých souborů...")
     cleanup_old_images()
     
-    print("Worker: Spouštím monitoring parkoviště...")
+    logger.info("Worker: Spouštím monitoring parkoviště...")
     while True:
         try:
             stahni_a_detekuj()
         except Exception as e:
-            print(f"Worker Error: {e}")
+            logger.error(f"Worker Loop Error: {e}")
         
-        print(f"Worker: Čekám {INTERVAL_SEKUNDY/60} minut do další kontroly...")
+        logger.info(f"Worker: Čekám {INTERVAL_SEKUNDY/60} minut do další kontroly...")
         time.sleep(INTERVAL_SEKUNDY)

@@ -1,14 +1,22 @@
+import os
+import logging
+from datetime import timezone, datetime, timedelta
+from zoneinfo import ZoneInfo
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 import psycopg2
 from psycopg2.extras import RealDictCursor
-import os
-from datetime import timezone, datetime, timedelta
-from zoneinfo import ZoneInfo
-from fastapi.responses import FileResponse
 import latest_image_service
+
+# --- LOGOVÁNÍ ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 from threading import Thread
 import main as worker_module  # Importujeme modul workeru
@@ -132,6 +140,11 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "tajne_heslo")
 def get_db_connection():
     try:
         if DATABASE_URL:
+            # Pro Railway/produkci přidáme sslmode=require pokud není v URL
+            if "sslmode=" not in DATABASE_URL:
+                separator = "&" if "?" in DATABASE_URL else "?"
+                url_with_ssl = f"{DATABASE_URL}{separator}sslmode=require"
+                return psycopg2.connect(url_with_ssl, cursor_factory=RealDictCursor)
             return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         else:
             return psycopg2.connect(
@@ -140,7 +153,7 @@ def get_db_connection():
                 cursor_factory=RealDictCursor
             )
     except Exception as e:
-        print(f"API DB Error: {e}")
+        logger.error(f"API DB Connection Error: {e}")
         return None
 
 
@@ -196,7 +209,7 @@ def get_stats(detail: bool = False):
             
         return result
     except Exception as e:
-        print(f"API Error in get_stats: {e}")
+        logger.error(f"API Error in get_stats: {e}")
         return [] # V případě chyby v dotazu také vrátí prázdný seznam
     finally:
         # Zajistíme, že se spojení vždy uzavře
@@ -278,7 +291,7 @@ def get_stats_history(date: str = None, detail: bool = False):
             
         return result
     except Exception as e:
-        print(f"API Error in get_stats_history: {e}")
+        logger.error(f"API Error in get_stats_history: {e}")
         return []
     finally:
         if conn:
@@ -330,7 +343,7 @@ def get_stats_weekday(day: int = None):
         
         return result
     except Exception as e:
-        print(f"API Error in get_stats_weekday: {e}")
+        logger.error(f"API Error in get_stats_weekday: {e}")
         return []
     finally:
         if conn:
@@ -340,11 +353,20 @@ def get_stats_weekday(day: int = None):
 @app.get("/current")
 def get_current():
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT count FROM parkoviste_zaznamy ORDER BY timestamp DESC LIMIT 1")
-    data = cur.fetchone()
-    cur.close()
-    conn.close()
+    if not conn:
+        return {"count": 0, "parking_status": get_parking_status()}
+
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT count FROM parkoviste_zaznamy ORDER BY timestamp DESC LIMIT 1")
+        data = cur.fetchone()
+    except Exception as e:
+        logger.error(f"API Error in get_current: {e}")
+        data = {"count": 0}
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
     
     # Přidat informace o parkování
     result = data or {"count": 0}
@@ -373,7 +395,7 @@ def startup_event():
     # Daemon=True zajistí, že se vlákno ukončí, když skončí hlavní proces
     worker_thread = Thread(target=worker_module.start_worker_loop, daemon=True)
     worker_thread.start()
-    print("System: Worker vlákno spuštěno.")
+    logger.info("System: Worker vlákno spuštěno.")
 
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):

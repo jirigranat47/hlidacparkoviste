@@ -44,3 +44,11 @@ Verze aplikace je definována v souboru api.py.
 APP_VERSION = "1.0.3"
 ``
 Pro změnu verze stačí upravit tuto konstantu a restartovat aplikaci (nebo pokračovat na auto-reload).
+
+## Historie změn
+- **2026-05-11**: Oprava stability workeru a připojení k databázi.
+  - Implementováno SSL (`sslmode=require`) pro stabilní spojení s Railway PostgreSQL.
+  - Fixnuty úniky databázových spojení (přidány `finally` bloky pro uzavírání).
+  - Přechod z `print()` na standardní modul `logging` pro lepší sledování stavu v produkci.
+  - Přidány timeouty (15s) pro síťové požadavky ve workeru.
+  - Zpřesněna diagnostika selhání připojení k DB.
