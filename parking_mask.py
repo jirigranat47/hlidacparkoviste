@@ -6,26 +6,27 @@ import numpy as np
 # Uživatel by si měl tyto body upravit podle skutečného záběru kamery.
 
 PARKING_ZONES = [
+    #První polygon (spodní západní část)
     np.array([
         [434, 499],     # Levý horní
-        [564, 556],     # Pravý horní
-        [72, 948],     # Pravý dolní
-        [40, 771]       # Levý dolní
+        [524, 556],     # Pravý horní
+        [35, 925],     # Pravý dolní
+        [30, 740]       # Levý dolní
     ], dtype=np.int32),
     
     #Druhý polygon (spodní jižní část)
     np.array([
-        [756, 533],
-        [910, 559],
-        [1021, 1020],
-        [751, 1020]
+        [700, 533],
+        [850, 559],
+        [950, 1020],
+        [670, 1020]
     ], dtype=np.int32),
 
     #Třetí polygon (parkování podél severní části)
     np.array([
-        [552, 360],
-        [631, 359],
-        [1, 734],
-        [3, 620]
+        [470, 360],
+        [550, 359],
+        [1, 700],
+        [3, 600]
     ], dtype=np.int32),
 ]
