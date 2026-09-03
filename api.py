@@ -410,7 +410,7 @@ def read_statistics(request: Request):
     return templates.TemplateResponse(request=request, name="statistics.html", context=get_template_context(request))
 
 @app.get("/latest", response_class=HTMLResponse)
-def read_latest(request: Request):
+def read_latest(request: Request, calibrate: bool = False):
     # Získání času posledního snímku
     image_path = latest_image_service.get_latest_annotated_image_path()
     last_updated = "Není k dispozici"
@@ -423,7 +423,11 @@ def read_latest(request: Request):
         dt_prague = dt_utc.astimezone(prague_tz)
         last_updated = dt_prague.strftime("%d.%m.%Y %H:%M:%S")
     
-    return templates.TemplateResponse(request=request, name="latest.html", context=get_template_context(request, last_updated=last_updated))
+    return templates.TemplateResponse(
+        request=request, 
+        name="latest.html", 
+        context=get_template_context(request, last_updated=last_updated, calibrate=calibrate)
+    )
 
 @app.get("/service/archive", response_class=HTMLResponse)
 def read_archive(request: Request):

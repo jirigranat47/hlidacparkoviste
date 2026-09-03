@@ -179,9 +179,12 @@ def stahni_a_detekuj():
         
         # Připravíme kopii obrázku pro vykreslení
         annotated_frame = frame.copy()
-        
+
+        # Získání aktuálních parkovacích zón (včetně případných offsetů z .env / souboru)
+        current_zones = parking_mask.get_parking_zones()
+
         # Vykreslení hranice parkovacích zón (zeleně - definice oblasti)
-        cv2.polylines(annotated_frame, parking_mask.PARKING_ZONES, isClosed=True, color=(0, 255, 0), thickness=2)
+        cv2.polylines(annotated_frame, current_zones, isClosed=True, color=(0, 255, 0), thickness=2)
 
         for r in results:
             boxes = r.boxes
@@ -198,7 +201,7 @@ def stahni_a_detekuj():
                 
                 # Kontrola, zda je střed uvnitř NĚKTERÉ z parkovacích zón
                 is_in_zone = False
-                for zone in parking_mask.PARKING_ZONES:
+                for zone in current_zones:
                     # measureDist=False vrací +1 (uvnitř), -1 (venku), 0 (na hraně)
                     if cv2.pointPolygonTest(zone, (cx, cy), False) >= 0:
                         is_in_zone = True

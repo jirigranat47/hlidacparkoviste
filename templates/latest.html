@@ -54,10 +54,21 @@
                         <strong>Poslední aktualizace: {{ last_updated }}</strong>
                     </span>
                 </div>
-                <div class="image-container">
+                <div class="image-container" style="position: relative;">
                     <img src="/latest-image" alt="Aktuální snímek parkoviště s detekcí obsazenosti"
-                        class="latest-image">
+                        class="latest-image" id="latest-cam-image">
                 </div>
+                {% if calibrate %}
+                <div id="coords-bar" style="margin-top: 0.75rem; padding: 0.6rem 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        🎯 <strong>Souřadnice pro kalibraci zón:</strong> 
+                        <span id="coords-display" style="font-family: monospace; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #38bdf8; font-weight: 600;">[—, —]</span>
+                        <span id="image-dim" style="font-size: 0.8rem; color: #64748b; margin-left: 0.3rem;"></span>
+                        <span style="font-size: 0.8rem; color: #94a3b8; margin-left: 0.5rem;">(Najetím myši na snímek zjistíte [x, y], kliknutím zkopírujete)</span>
+                    </div>
+                    <div id="copy-status" style="font-size: 0.8rem; color: #4ade80; display: none;">✓ Zkopírováno do schránky!</div>
+                </div>
+                {% endif %}
             </div>
         </main>
 
@@ -65,6 +76,103 @@
     </div>
 
     <script>
+        {% if calibrate %}
+        const camImg = document.getElementById('latest-cam-image');
+        const coordsDisplay = document.getElementById('coords-display');
+        const copyStatus = document.getElementById('copy-status');
+        const imageDimDisplay = document.getElementById('image-dim');
+
+        function updateDimensions() {
+            if (camImg && camImg.naturalWidth && camImg.naturalHeight && imageDimDisplay) {
+                imageDimDisplay.textContent = `(${camImg.naturalWidth} × ${camImg.naturalHeight} px)`;
+            }
+        }
+
+        if (camImg) {
+            if (camImg.complete) {
+                updateDimensions();
+            } else {
+                camImg.addEventListener('load', updateDimensions);
+            }
+        }
+
+        function getActualImageCoords(e) {
+            const rect = camImg.getBoundingClientRect();
+            const nw = camImg.naturalWidth;
+            const nh = camImg.naturalHeight;
+
+            if (!nw || !nh || !rect.width || !rect.height) return null;
+
+            // Výpočet skutečné vykreslené plochy obrázku s ohledem na object-fit: contain
+            const imgRatio = nw / nh;
+            const containerRatio = rect.width / rect.height;
+
+            let renderedWidth, renderedHeight, offsetX, offsetY;
+
+            if (containerRatio > imgRatio) {
+                // Prázdné pruhy jsou po stranách (vlevo a vpravo)
+                renderedHeight = rect.height;
+                renderedWidth = renderedHeight * imgRatio;
+                offsetX = (rect.width - renderedWidth) / 2;
+                offsetY = 0;
+            } else {
+                // Prázdné pruhy jsou nahoře a dole
+                renderedWidth = rect.width;
+                renderedHeight = renderedWidth / imgRatio;
+                offsetX = 0;
+                offsetY = (rect.height - renderedHeight) / 2;
+            }
+
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Kontrola, zda je kurzor uvnitř skutečného obrazu
+            if (mouseX < offsetX || mouseX > offsetX + renderedWidth ||
+                mouseY < offsetY || mouseY > offsetY + renderedHeight) {
+                return null;
+            }
+
+            const x = Math.max(0, Math.min(nw, Math.round((mouseX - offsetX) * (nw / renderedWidth))));
+            const y = Math.max(0, Math.min(nh, Math.round((mouseY - offsetY) * (nh / renderedHeight))));
+
+            return { x, y };
+        }
+
+        if (camImg && coordsDisplay) {
+            camImg.addEventListener('mousemove', function (e) {
+                const coords = getActualImageCoords(e);
+                if (coords) {
+                    camImg.style.cursor = 'crosshair';
+                    coordsDisplay.textContent = `[${coords.x}, ${coords.y}]`;
+                    coordsDisplay.style.color = '#38bdf8';
+                } else {
+                    camImg.style.cursor = 'default';
+                    coordsDisplay.textContent = `[Mimo snímek]`;
+                    coordsDisplay.style.color = '#94a3b8';
+                }
+            });
+
+            camImg.addEventListener('mouseleave', function () {
+                camImg.style.cursor = 'default';
+                coordsDisplay.textContent = `[—, —]`;
+                coordsDisplay.style.color = '#38bdf8';
+            });
+
+            camImg.addEventListener('click', function (e) {
+                const coords = getActualImageCoords(e);
+                if (coords) {
+                    const text = `[${coords.x}, ${coords.y}]`;
+                    navigator.clipboard.writeText(text).then(() => {
+                        if (copyStatus) {
+                            copyStatus.style.display = 'inline';
+                            setTimeout(() => { copyStatus.style.display = 'none'; }, 2000);
+                        }
+                    }).catch(() => {});
+                }
+            });
+        }
+        {% endif %}
+
         // Automatický reload stránky každých 2 minuty (120000 ms) pro aktualizaci obrázku
         setTimeout(function () {
             window.location.reload();

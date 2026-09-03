@@ -7,7 +7,7 @@
    - Inferenci (YOLOv8 nano).
    - Zápis do DB (Psycopg2).
 3. **api (FastAPI)**: Backend poskytující data pro frontend.
-4. **adminer**: Webové rozhraní pro správu databáze (port 8080).
+4. **adminer**: Webové rozhraní pro správu databáze (port 8088).
 
 ## Datové schéma
 Tabulka `occupancy`:
