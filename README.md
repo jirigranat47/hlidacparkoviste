@@ -109,11 +109,14 @@ Po spuštění jsou dostupné tyto služby:
 Verze aplikace je definována v souboru `api.py`:
 
 ```python
-APP_VERSION = "1.0.6"
+APP_VERSION = "1.0.8"
 ```
 Pro změnu verze stačí upravit tuto konstantu a restartovat aplikaci (nebo pokračovat na auto-reload).
 
 ## Historie změn
+- **2026-10-03**: Oprava stahování snímků z kamery (verze 1.0.8).
+  - Vynucení IPv4 v `urllib3` (`HAS_IPV6 = False`) kvůli nefunkčnímu/timeoutujícímu IPv6 (AAAA) záznamu na serveru města (`www.kostelecno.cz`), který způsoboval chyby `Network is unreachable` / `ConnectTimeoutError` na Railway a v Linux Dockeru.
+  - Zavedení `requests.Session` s browser `User-Agent` hlavičkou a automatickým opakováním (Retry s backoffem).
 - **2026-05-11**: Oprava stability workeru a připojení k databázi.
   - Implementováno SSL (`sslmode=require`) pro stabilní spojení s Railway PostgreSQL.
   - Fixnuty úniky databázových spojení (přidány `finally` bloky pro uzavírání).

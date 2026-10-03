@@ -2,6 +2,9 @@ import os
 import time
 import logging
 import requests
+import urllib3.util.connection as urllib3_cn
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import cv2
@@ -12,6 +15,25 @@ from urllib.parse import urljoin
 from ultralytics import YOLO
 from dotenv import load_dotenv
 import parking_mask # Import definice masky
+
+# Vynucení pouze IPv4 pro veškerá odchozí HTTP(S) spojení
+# Zamezí pokusům o IPv6, která na cílovém serveru města / v cloudu nefunguje
+urllib3_cn.HAS_IPV6 = False
+
+# Robustní HTTP session s retry logikou a realistickým User-Agentem
+http_session = requests.Session()
+http_session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+})
+retries = Retry(
+    total=3,
+    backoff_factor=1,
+    status_forcelist=[500, 502, 503, 504],
+    raise_on_status=False
+)
+adapter = HTTPAdapter(max_retries=retries)
+http_session.mount("http://", adapter)
+http_session.mount("https://", adapter)
 
 # --- LOGOVÁNÍ ---
 logging.basicConfig(
@@ -146,7 +168,7 @@ def cleanup_old_images():
 def stahni_a_detekuj():
     try:
         # 1. Získání URL obrázku
-        response = requests.get(URL_STRANKY, timeout=15)
+        response = http_session.get(URL_STRANKY, timeout=15)
         soup = BeautifulSoup(response.text, 'html.parser')
         img_tag = soup.find('img', alt=ALT_TEXT)
         
@@ -155,7 +177,7 @@ def stahni_a_detekuj():
             return
 
         img_url = urljoin(URL_STRANKY, img_tag['src'])
-        img_data = requests.get(img_url, timeout=15).content
+        img_data = http_session.get(img_url, timeout=15).content
         
         # 2. Uložení originální fotky
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
