@@ -433,6 +433,31 @@ def read_latest(request: Request, calibrate: bool = False):
 def read_archive(request: Request):
     return templates.TemplateResponse(request=request, name="archive.html", context=get_template_context(request))
 
+@app.get("/api/debug/ping")
+def debug_ping():
+    import socket
+    import requests as req
+    results = {}
+    try:
+        results["outbound_ip"] = req.get("https://api.ipify.org?format=json", timeout=5).json()
+    except Exception as e:
+        results["outbound_ip_err"] = str(e)
+    
+    for host in ["www.kostelecno.cz", "google.com", "seznam.cz"]:
+        try:
+            addrinfo = socket.getaddrinfo(host, 443, socket.AF_INET, socket.SOCK_STREAM)
+            results[f"{host}_dns"] = [a[4] for a in addrinfo]
+            ip = results[f"{host}_dns"][0][0]
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(5)
+            s.connect((ip, 443))
+            s.close()
+            results[f"{host}_tcp_443"] = "SUCCESS"
+        except Exception as e:
+            results[f"{host}_err"] = str(e)
+            
+    return results
+
 @app.get("/api/archive/list")
 def list_archive_files():
     """
